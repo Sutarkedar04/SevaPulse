@@ -9,7 +9,6 @@ class UserHomeScreen extends StatefulWidget {
 
 class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  int _currentIndex = 0;
 
   final List<Map<String, dynamic>> doctors = [
     {
@@ -535,6 +534,19 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
               children: [
                 // Health Metrics
                 _buildHealthMetrics(),
+                const SizedBox(height: 20),
+
+                // Available Doctors
+                const Text(
+                  'Available Doctors',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2c3e50),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ...doctors.map((doctor) => _buildDoctorCard(doctor)),
                 const SizedBox(height: 20),
 
                 // Health Alerts
