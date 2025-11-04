@@ -1,4 +1,7 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'package:flutter/material.dart';
+import '../widgets/app_scaffold.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({Key? key}) : super(key: key);
@@ -46,7 +49,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
   final List<Map<String, dynamic>> appointments = [
     {
       'id': 1,
-      'doctor': 'Dr. Isha Tapekar',
+      'doctor': 'Dr.Isha Tapekar',
       'specialty': 'Cardiologist',
       'date': '2024-01-15',
       'time': '10:00 AM',
@@ -70,9 +73,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
       'date': '2 hours ago',
     },
     {
-      'title': 'COVID-19 Update',
-      'description': 'New variant detected, maintain precautions',
-      'level': 'high',
+      'title': 'Health Tips',
+      'description': 'Stay hydrated and maintain regular exercise',
+      'level': 'low',
       'date': '1 day ago',
     },
   ];
@@ -85,10 +88,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
       'organizer': 'City Health Department',
     },
     {
-      'title': 'Diabetes Awareness Workshop',
+      'title': 'Heart Health Workshop',
       'date': '2024-02-10',
       'location': 'Community Health Center',
-      'organizer': 'Diabetes Association',
+      'organizer': 'Heart Care Foundation',
     },
   ];
 
@@ -125,58 +128,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
     super.dispose();
   }
 
-  void _showLogoutDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Implement logout logic
-            },
-            child: const Text(
-              'Logout',
-              style: TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDeleteAccountDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Account'),
-        content: const Text('This action cannot be undone. All your data will be permanently deleted.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Implement delete account logic
-            },
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildHealthMetrics() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -187,6 +138,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF3498db).withValues(alpha:0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -227,13 +185,16 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
   Widget _buildDoctorCard(Map<String, dynamic> doctor) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: const Color(0xFF3498db).withOpacity(0.1),
+              backgroundColor: const Color(0xFF3498db).withValues(alpha:0.1),
               radius: 30,
               child: Text(
                 doctor['image'],
@@ -282,7 +243,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: doctor['available'] ? const Color(0xFF27ae60).withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                          color: doctor['available'] ? const Color(0xFF27ae60).withValues(alpha:0.1) : Colors.grey.withValues(alpha:0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -311,6 +272,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
+                    elevation: 2,
                   ),
                   child: const Text('Book'),
                 ),
@@ -341,7 +303,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
           mainAxisSize: MainAxisSize.min,
           children: [
             TextFormField(
-              decoration: const InputDecoration(labelText: 'Preferred Date'),
+              decoration: const InputDecoration(
+                labelText: 'Preferred Date',
+                border: OutlineInputBorder(),
+              ),
               readOnly: true,
               onTap: () {
                 // Show date picker
@@ -349,7 +314,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
             ),
             const SizedBox(height: 16),
             TextFormField(
-              decoration: const InputDecoration(labelText: 'Preferred Time'),
+              decoration: const InputDecoration(
+                labelText: 'Preferred Time',
+                border: OutlineInputBorder(),
+              ),
               readOnly: true,
               onTap: () {
                 // Show time picker
@@ -357,7 +325,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
             ),
             const SizedBox(height: 16),
             TextFormField(
-              decoration: const InputDecoration(labelText: 'Symptoms/Reason'),
+              decoration: const InputDecoration(
+                labelText: 'Symptoms/Reason',
+                border: OutlineInputBorder(),
+              ),
               maxLines: 3,
             ),
           ],
@@ -377,6 +348,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
                 ),
               );
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3498db),
+            ),
             child: const Text('Book Now'),
           ),
         ],
@@ -388,7 +362,16 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.8,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -396,7 +379,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
           children: [
             Center(
               child: CircleAvatar(
-                backgroundColor: const Color(0xFF3498db).withOpacity(0.1),
+                backgroundColor: const Color(0xFF3498db).withValues(alpha:0.1),
                 radius: 40,
                 child: Text(
                   doctor['image'],
@@ -421,6 +404,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
                 style: const TextStyle(
                   fontSize: 16,
                   color: Color(0xFF3498db),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
@@ -440,8 +424,17 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF27ae60),
                   padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                child: const Text('Book Appointment'),
+                child: const Text(
+                  'Book Appointment',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           ],
@@ -457,309 +450,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
         children: [
           Text(icon, style: const TextStyle(fontSize: 20)),
           const SizedBox(width: 12),
-          Text(text, style: const TextStyle(fontSize: 16)),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFf8f9fa),
-      appBar: AppBar(
-        title: const Text(
-          'SEVA PULSE',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: const Color(0xFF3498db),
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none),
-            onPressed: () {},
-          ),
-          PopupMenuButton(
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'profile',
-                child: Text('My Profile'),
-              ),
-              const PopupMenuItem(
-                value: 'settings',
-                child: Text('Settings'),
-              ),
-              const PopupMenuItem(
-                value: 'logout',
-                child: Text('Logout', style: TextStyle(color: Colors.red)),
-              ),
-              const PopupMenuItem(
-                value: 'delete',
-                child: Text('Delete Account', style: TextStyle(color: Colors.red)),
-              ),
-            ],
-            onSelected: (value) {
-              switch (value) {
-                case 'logout':
-                  _showLogoutDialog();
-                  break;
-                case 'delete':
-                  _showDeleteAccountDialog();
-                  break;
-              }
-            },
+          Text(
+            text,
+            style: const TextStyle(fontSize: 16, color: Color(0xFF2c3e50)),
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Home'),
-            Tab(text: 'Appointments'),
-            Tab(text: 'Medicines'),
-            Tab(text: 'Health'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          // Home Tab
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Health Metrics
-                _buildHealthMetrics(),
-                const SizedBox(height: 20),
-
-                // Available Doctors
-                const Text(
-                  'Available Doctors',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2c3e50),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ...doctors.map((doctor) => _buildDoctorCard(doctor)),
-                const SizedBox(height: 20),
-
-                // Health Alerts
-                if (healthAlerts.isNotEmpty) ...[
-                  const Text(
-                    'Health Alerts',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2c3e50),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ...healthAlerts.map((alert) => _buildHealthAlert(alert)),
-                  const SizedBox(height: 20),
-                ],
-
-                // Quick Actions
-                const Text(
-                  'Quick Actions',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2c3e50),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  childAspectRatio: 1.5,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  children: [
-                    _buildQuickAction('📅', 'Appointments', const Color(0xFF3498db)),
-                    _buildQuickAction('💊', 'Medicines', const Color(0xFFe74c3c)),
-                    _buildQuickAction('📊', 'Health Data', const Color(0xFF27ae60)),
-                    _buildQuickAction('🏥', 'Find Doctors', const Color(0xFFf39c12)),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Upcoming Events
-                const Text(
-                  'Medical Events & Camps',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2c3e50),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ...medicalEvents.map((event) => _buildEventCard(event)),
-              ],
-            ),
-          ),
-
-          // Appointments Tab
-          ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: appointments.length,
-            itemBuilder: (context, index) => _buildAppointmentCard(appointments[index]),
-          ),
-
-          // Medicines Tab
-          Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Medicine Reminders',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2c3e50),
-                      ),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        // Add medicine
-                      },
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add Medicine'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3498db),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: medicines.length,
-                  itemBuilder: (context, index) => _buildMedicineCard(medicines[index]),
-                ),
-              ),
-            ],
-          ),
-
-          // Health Tab
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Health Monitoring',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2c3e50),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Connect Health Devices',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        ListTile(
-                          leading: const Icon(Icons.watch, color: Color(0xFF3498db)),
-                          title: const Text('Smart Watch'),
-                          subtitle: const Text('Connect to monitor heart rate, steps, etc.'),
-                          trailing: ElevatedButton(
-                            onPressed: () {
-                              // Connect Bluetooth device
-                            },
-                            child: const Text('Connect'),
-                          ),
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.monitor_heart, color: Color(0xFFe74c3c)),
-                          title: const Text('BP Monitor'),
-                          subtitle: const Text('Sync blood pressure data'),
-                          trailing: ElevatedButton(
-                            onPressed: () {
-                              // Connect Bluetooth device
-                            },
-                            child: const Text('Connect'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Medical Records',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2c3e50),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        ListTile(
-                          leading: const Icon(Icons.receipt_long, color: Color(0xFF27ae60)),
-                          title: const Text('Prescriptions'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () {
-                            // View prescriptions
-                          },
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.assignment, color: Color(0xFF3498db)),
-                          title: const Text('Lab Reports'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () {
-                            // View lab reports
-                          },
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.photo_library, color: Color(0xFFf39c12)),
-                          title: const Text('Scan & Store Receipts'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () {
-                            // Scan receipts
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Emergency contact or quick action
-        },
-        backgroundColor: const Color(0xFFe74c3c),
-        child: const Icon(Icons.emergency, color: Colors.white),
       ),
     );
   }
@@ -768,10 +463,14 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
     Color color = const Color(0xFFf39c12);
     if (alert['level'] == 'high') color = const Color(0xFFe74c3c);
     if (alert['level'] == 'medium') color = const Color(0xFFf39c12);
-
+    if (alert['level'] == 'low') color = const Color(0xFF27ae60);
+    
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      color: color.withOpacity(0.1),
+      color: color.withValues(alpha:0.1),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
@@ -787,15 +486,18 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: color,
+                      fontSize: 16,
                     ),
                   ),
+                  const SizedBox(height: 4),
                   Text(
                     alert['description'],
                     style: const TextStyle(color: Color(0xFF2c3e50)),
                   ),
+                  const SizedBox(height: 4),
                   Text(
                     alert['date'],
-                    style: TextStyle(color: color.withOpacity(0.7), fontSize: 12),
+                    style: TextStyle(color: color.withValues(alpha:0.7), fontSize: 12),
                   ),
                 ],
               ),
@@ -809,6 +511,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
   Widget _buildQuickAction(String emoji, String title, Color color) {
     return Card(
       elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: InkWell(
         onTap: () {
           // Handle quick action
@@ -823,9 +528,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
               const SizedBox(height: 8),
               Text(
                 title,
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: color,
+                  fontSize: 14,
                 ),
               ),
             ],
@@ -838,6 +545,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
   Widget _buildEventCard(Map<String, dynamic> event) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
@@ -846,10 +556,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: const Color(0xFF3498db).withOpacity(0.1),
+                color: const Color(0xFF3498db).withValues(alpha:0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.event, color: Color(0xFF3498db)),
+              child: const Icon(Icons.event, color: Color(0xFF3498db), size: 30),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -861,12 +571,31 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF2c3e50),
+                      fontSize: 16,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text('Date: ${event['date']}'),
-                  Text('Location: ${event['location']}'),
-                  Text('By: ${event['organizer']}'),
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_today, size: 14, color: Color(0xFF7f8c8d)),
+                      const SizedBox(width: 4),
+                      Text(
+                        event['date'],
+                        style: const TextStyle(color: Color(0xFF7f8c8d)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on, size: 14, color: Color(0xFF7f8c8d)),
+                      const SizedBox(width: 4),
+                      Text(
+                        event['location'],
+                        style: const TextStyle(color: Color(0xFF7f8c8d)),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -885,6 +614,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
   Widget _buildAppointmentCard(Map<String, dynamic> appointment) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -904,7 +636,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF3498db).withOpacity(0.1),
+                    color: const Color(0xFF3498db).withValues(alpha:0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -918,13 +650,19 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
               ],
             ),
             const SizedBox(height: 8),
-            Text(appointment['specialty']),
+            Text(
+              appointment['specialty'],
+              style: const TextStyle(color: Color(0xFF7f8c8d)),
+            ),
             const SizedBox(height: 8),
             Row(
               children: [
                 const Icon(Icons.calendar_today, size: 16, color: Color(0xFF7f8c8d)),
                 const SizedBox(width: 4),
-                Text('${appointment['date']} at ${appointment['time']}'),
+                Text(
+                  '${appointment['date']} at ${appointment['time']}',
+                  style: const TextStyle(color: Color(0xFF2c3e50)),
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -935,6 +673,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
                     onPressed: () {
                       // Reschedule
                     },
+                    style: OutlinedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
                     child: const Text('Reschedule'),
                   ),
                 ),
@@ -946,6 +689,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF27ae60),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     child: const Text('Join Call'),
                   ),
@@ -961,6 +707,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
   Widget _buildMedicineCard(Map<String, dynamic> medicine) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
@@ -984,6 +733,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF2c3e50),
+                      fontSize: 16,
                     ),
                   ),
                   Text(
@@ -996,7 +746,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFF3498db).withOpacity(0.1),
+                color: const Color(0xFF3498db).withValues(alpha:0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -1009,6 +759,351 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppScaffold(
+      title: 'SKY HEALTH',
+      body: Column(
+        children: [
+          // Tab Bar
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 3,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: TabBar(
+              controller: _tabController,
+              labelColor: Color(0xFF3498db),
+              unselectedLabelColor: Color(0xFF7f8c8d),
+              indicatorColor: Color(0xFF3498db),
+              tabs: const [
+                Tab(text: 'Home'),
+                Tab(text: 'Appointments'),
+                Tab(text: 'Medicines'),
+                Tab(text: 'Health'),
+              ],
+            ),
+          ),
+          
+          // Tab Content
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                // Home Tab
+                SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Welcome Section
+                      const Text(
+                        'Welcome Back!',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2c3e50),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'How can we help you today?',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF7f8c8d),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Health Metrics
+                      _buildHealthMetrics(),
+                      const SizedBox(height: 20),
+
+                      // Health Alerts
+                      if (healthAlerts.isNotEmpty) ...[
+                        const Text(
+                          'Health Alerts',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2c3e50),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        ...healthAlerts.map((alert) => _buildHealthAlert(alert)),
+                        const SizedBox(height: 20),
+                      ],
+
+                      // Quick Actions
+                      const Text(
+                        'Quick Actions',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2c3e50),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        childAspectRatio: 1.5,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        children: [
+                          _buildQuickAction('📅', 'Appointments', Color(0xFF3498db)),
+                          _buildQuickAction('💊', 'Medicines', Color(0xFFe74c3c)),
+                          _buildQuickAction('📊', 'Health Data', Color(0xFF27ae60)),
+                          _buildQuickAction('🏥', 'Find Doctors', Color(0xFFf39c12)),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Available Doctors
+                      const Text(
+                        'Available Doctors',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2c3e50),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ...doctors.map((doctor) => _buildDoctorCard(doctor)),
+                      const SizedBox(height: 20),
+
+                      // Medical Events
+                      const Text(
+                        'Medical Events & Camps',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2c3e50),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ...medicalEvents.map((event) => _buildEventCard(event)),
+                    ],
+                  ),
+                ),
+
+                // Appointments Tab
+                appointments.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.calendar_today, size: 64, color: Color(0xFFbdc3c7)),
+                            SizedBox(height: 16),
+                            Text(
+                              'No Appointments',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Color(0xFF7f8c8d),
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Book your first appointment',
+                              style: TextStyle(
+                                color: Color(0xFFbdc3c7),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: appointments.length,
+                        itemBuilder: (context, index) => _buildAppointmentCard(appointments[index]),
+                      ),
+
+                // Medicines Tab
+                Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Medicine Reminders',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF2c3e50),
+                            ),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              // Add medicine
+                            },
+                            icon: const Icon(Icons.add),
+                            label: const Text('Add Medicine'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF3498db),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: medicines.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  Icon(Icons.medication, size: 64, color: Color(0xFFbdc3c7)),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    'No Medicines',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Color(0xFF7f8c8d),
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Add your first medicine reminder',
+                                    style: TextStyle(
+                                      color: Color(0xFFbdc3c7),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              itemCount: medicines.length,
+                              itemBuilder: (context, index) => _buildMedicineCard(medicines[index]),
+                            ),
+                    ),
+                  ],
+                ),
+
+                // Health Tab
+                SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Health Monitoring',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2c3e50),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Connect Health Devices',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2c3e50),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              ListTile(
+                                leading: const Icon(Icons.watch, color: Color(0xFF3498db)),
+                                title: const Text('Smart Watch'),
+                                subtitle: const Text('Connect to monitor heart rate, steps, etc.'),
+                                trailing: ElevatedButton(
+                                  onPressed: () {
+                                    // Connect Bluetooth device
+                                  },
+                                  child: const Text('Connect'),
+                                ),
+                              ),
+                              ListTile(
+                                leading: const Icon(Icons.monitor_heart, color: Color(0xFFe74c3c)),
+                                title: const Text('BP Monitor'),
+                                subtitle: const Text('Sync blood pressure data'),
+                                trailing: ElevatedButton(
+                                  onPressed: () {
+                                    // Connect Bluetooth device
+                                  },
+                                  child: const Text('Connect'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Medical Records',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2c3e50),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              ListTile(
+                                leading: const Icon(Icons.receipt_long, color: Color(0xFF27ae60)),
+                                title: const Text('Prescriptions'),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () {
+                                  // View prescriptions
+                                },
+                              ),
+                              ListTile(
+                                leading: const Icon(Icons.assignment, color: Color(0xFF3498db)),
+                                title: const Text('Lab Reports'),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () {
+                                  // View lab reports
+                                },
+                              ),
+                              ListTile(
+                                leading: const Icon(Icons.photo_library, color: Color(0xFFf39c12)),
+                                title: const Text('Scan & Store Receipts'),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () {
+                                  // Scan receipts
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

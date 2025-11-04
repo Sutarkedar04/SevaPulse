@@ -1,6 +1,6 @@
 {
-    "name": "sky_health",
-    "short_name": "sky_health",
+    "name": "Seva Pulse",
+    "short_name": "Seva Pulse",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

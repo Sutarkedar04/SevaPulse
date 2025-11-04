@@ -13,7 +13,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
   final List<Map<String, dynamic>> appointments = [
     {
       'id': 1,
-      'patientName': 'Om Sharma',
+      'patientName': 'Namesh Patil',
       'time': '10:00 AM',
       'date': '2025-09-23',
       'type': 'Follow-up',
@@ -24,7 +24,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
     },
     {
       'id': 2,
-      'patientName': 'Harsh Patel',
+      'patientName': 'Ramesh Mane',
       'time': '2:30 PM',
       'date': '2025-09-23',
       'type': 'New Patient',
@@ -35,7 +35,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
     },
     {
       'id': 3,
-      'patientName': 'Priya Singh',
+      'patientName': 'Govind Panchal',
       'time': '4:00 PM',
       'date': '2025-09-23',
       'type': 'Consultation',
@@ -49,7 +49,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
   final List<Map<String, dynamic>> patients = [
     {
       'id': 'P001',
-      'name': 'Om Sharma',
+      'name': 'Namesh Patil',
       'age': 45,
       'gender': 'Male',
       'lastVisit': '2025-08-15',
@@ -58,18 +58,18 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
     },
     {
       'id': 'P002',
-      'name': 'Harsh Patel',
+      'name': 'Ramesh Mane',
       'age': 32,
-      'gender': 'Male',
+      'gender': 'Female',
       'lastVisit': '2025-09-10',
       'condition': 'Migraine',
       'emergencyContact': false,
     },
     {
       'id': 'P003',
-      'name': 'Priya Singh',
+      'name': 'Govind Panchal',
       'age': 28,
-      'gender': 'Female',
+      'gender': 'Male',
       'lastVisit': '2025-08-20',
       'condition': 'Seasonal Flu',
       'emergencyContact': true,
@@ -79,7 +79,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
   final List<Map<String, dynamic>> emergencies = [
     {
       'id': 1,
-      'patientName': 'Raj Kumar',
+      'patientName': 'Namesh Patil',
       'time': '09:15 AM',
       'condition': 'Severe Chest Pain',
       'priority': 'critical',
@@ -87,7 +87,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
     },
     {
       'id': 2,
-      'patientName': 'Anita Desai',
+      'patientName': 'Ramesh Mane',
       'time': '10:30 AM',
       'condition': 'Breathing Difficulty',
       'priority': 'high',
@@ -120,8 +120,8 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
     'hospital': 'City Heart Center',
     'rating': 4.8,
     'patientsCount': 1250,
-    'contact': '+91 9876543210',
-    'email': 'dr.isha@cityheart.com',
+    'contact': '+1 555-0123',
+    'email': 'dr.sarah@cityheart.com',
     'bio': 'Specialized in interventional cardiology with extensive experience in angioplasty and heart disease management.',
   };
 
@@ -163,32 +163,6 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
     );
   }
 
-  void _showDeleteAccountDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Account'),
-        content: const Text('This action cannot be undone. All your data will be permanently deleted.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Implement delete account logic
-            },
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showPrescriptionDialog(Map<String, dynamic> patient) {
     showDialog(
       context: context,
@@ -198,26 +172,36 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                decoration: const InputDecoration(labelText: 'Diagnosis'),
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'Diagnosis',
+                  border: OutlineInputBorder(),
+                ),
                 maxLines: 2,
               ),
               const SizedBox(height: 16),
-              TextField(
+              TextFormField(
                 decoration: const InputDecoration(
                   labelText: 'Medicines',
-                  helperText: 'Enter medicines with dosage and timing...',
+                  border: OutlineInputBorder(),
+                  hintText: 'Enter medicines with dosage and timing...',
                 ),
                 maxLines: 4,
               ),
               const SizedBox(height: 16),
-              TextField(
-                decoration: const InputDecoration(labelText: 'Tests Recommended'),
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'Tests Recommended',
+                  border: OutlineInputBorder(),
+                ),
                 maxLines: 2,
               ),
               const SizedBox(height: 16),
-              TextField(
-                decoration: const InputDecoration(labelText: 'Follow-up Date'),
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'Follow-up Date',
+                  border: OutlineInputBorder(),
+                ),
                 readOnly: true,
                 onTap: () {
                   // Show date picker
@@ -241,6 +225,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
                 ),
               );
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3498db),
+            ),
             child: const Text('Send Prescription'),
           ),
         ],
@@ -257,32 +244,47 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                decoration: const InputDecoration(labelText: 'Event Title'),
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'Event Title',
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 16),
-              TextField(
-                decoration: const InputDecoration(labelText: 'Date'),
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'Date',
+                  border: OutlineInputBorder(),
+                ),
                 readOnly: true,
                 onTap: () {
                   // Show date picker
                 },
               ),
               const SizedBox(height: 16),
-              TextField(
-                decoration: const InputDecoration(labelText: 'Time'),
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'Time',
+                  border: OutlineInputBorder(),
+                ),
                 readOnly: true,
                 onTap: () {
                   // Show time picker
                 },
               ),
               const SizedBox(height: 16),
-              TextField(
-                decoration: const InputDecoration(labelText: 'Location'),
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'Location',
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 16),
-              TextField(
-                decoration: const InputDecoration(labelText: 'Description'),
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'Description',
+                  border: OutlineInputBorder(),
+                ),
                 maxLines: 3,
               ),
             ],
@@ -303,6 +305,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
                 ),
               );
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF27ae60),
+            ),
             child: const Text('Create Event'),
           ),
         ],
@@ -317,7 +322,10 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -337,7 +345,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: priorityColor.withOpacity(0.1),
+                    color: priorityColor.withValues(alpha:0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -369,6 +377,11 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
                     onPressed: () {
                       // Reschedule appointment
                     },
+                    style: OutlinedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
                     child: const Text('Reschedule'),
                   ),
                 ),
@@ -380,6 +393,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3498db),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     child: const Text('Start Consult'),
                   ),
@@ -404,12 +420,16 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
   Widget _buildPatientCard(Map<String, dynamic> patient) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: const Color(0xFF3498db).withOpacity(0.1),
+              backgroundColor: const Color(0xFF3498db).withValues(alpha:0.1),
+              radius: 25,
               child: Text(
                 patient['name'][0],
                 style: const TextStyle(
@@ -471,7 +491,10 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      color: priorityColor.withOpacity(0.1),
+      color: priorityColor.withValues(alpha:0.1),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -507,6 +530,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: priorityColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: const Text('Attend', style: TextStyle(color: Colors.white)),
             ),
@@ -519,6 +545,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
   Widget _buildEventCard(Map<String, dynamic> event) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -529,6 +558,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF2c3e50),
+                fontSize: 16,
               ),
             ),
             const SizedBox(height: 8),
@@ -565,6 +595,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
                       ),
                     );
                   },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF3498db),
+                  ),
                   child: const Text('Send Reminder'),
                 ),
               ],
@@ -577,7 +610,10 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Card(
-      elevation: 2,
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Container(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -619,9 +655,11 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
               color: Color(0xFF2c3e50),
             ),
           ),
-          Text(
-            value,
-            style: const TextStyle(color: Color(0xFF7f8c8d)),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(color: Color(0xFF7f8c8d)),
+            ),
           ),
         ],
       ),
@@ -661,18 +699,11 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
                 value: 'logout',
                 child: Text('Logout', style: TextStyle(color: Colors.red)),
               ),
-              const PopupMenuItem(
-                value: 'delete',
-                child: Text('Delete Account', style: TextStyle(color: Colors.red)),
-              ),
             ],
             onSelected: (value) {
               switch (value) {
                 case 'logout':
                   _showLogoutDialog();
-                  break;
-                case 'delete':
-                  _showDeleteAccountDialog();
                   break;
               }
             },
@@ -680,6 +711,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
         ],
         bottom: TabBar(
           controller: _tabController,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          indicatorColor: Colors.white,
           tabs: const [
             Tab(icon: Icon(Icons.dashboard), text: 'Dashboard'),
             Tab(icon: Icon(Icons.people), text: 'Patients'),
@@ -699,13 +733,16 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
               children: [
                 // Welcome Card
                 Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Row(
                       children: [
                         CircleAvatar(
                           radius: 30,
-                          backgroundColor: const Color(0xFF3498db).withOpacity(0.1),
+                          backgroundColor: const Color(0xFF3498db).withValues(alpha:0.1),
                           child: const Icon(Icons.medical_services, color: Color(0xFF3498db), size: 30),
                         ),
                         const SizedBox(width: 16),
@@ -811,11 +848,35 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
                 ),
               ),
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: patients.length,
-                  itemBuilder: (context, index) => _buildPatientCard(patients[index]),
-                ),
+                child: patients.isEmpty
+                    ? const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.people, size: 64, color: Color(0xFFbdc3c7)),
+                            SizedBox(height: 16),
+                            Text(
+                              'No Patients',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Color(0xFF7f8c8d),
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Patients will appear here',
+                              style: TextStyle(
+                                color: Color(0xFFbdc3c7),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: patients.length,
+                        itemBuilder: (context, index) => _buildPatientCard(patients[index]),
+                      ),
               ),
             ],
           ),
@@ -848,11 +909,35 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
                 ),
               ),
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: medicalEvents.length,
-                  itemBuilder: (context, index) => _buildEventCard(medicalEvents[index]),
-                ),
+                child: medicalEvents.isEmpty
+                    ? const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.event, size: 64, color: Color(0xFFbdc3c7)),
+                            SizedBox(height: 16),
+                            Text(
+                              'No Events',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Color(0xFF7f8c8d),
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Create your first medical event',
+                              style: TextStyle(
+                                color: Color(0xFFbdc3c7),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: medicalEvents.length,
+                        itemBuilder: (context, index) => _buildEventCard(medicalEvents[index]),
+                      ),
               ),
             ],
           ),
@@ -863,13 +948,16 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
             child: Column(
               children: [
                 Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
                         CircleAvatar(
                           radius: 50,
-                          backgroundColor: const Color(0xFF3498db).withOpacity(0.1),
+                          backgroundColor: const Color(0xFF3498db).withValues(alpha:0.1),
                           child: const Icon(Icons.medical_services, size: 40, color: Color(0xFF3498db)),
                         ),
                         const SizedBox(height: 16),
@@ -886,6 +974,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
                           style: const TextStyle(
                             fontSize: 18,
                             color: Color(0xFF3498db),
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -899,6 +988,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
                 ),
                 const SizedBox(height: 20),
                 Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -925,6 +1017,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
                 ),
                 const SizedBox(height: 20),
                 Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(

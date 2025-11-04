@@ -43,13 +43,13 @@ class ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               TextField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: 'Phone Number',
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.all(Radius.circular(10)),
                   ),
                   filled: true,
-                  fillColor: Colors.grey[50],
+                  fillColor: Color(0xFFFAFAFA),
                 ),
               ),
               const SizedBox(height: 30),
@@ -65,32 +65,32 @@ class ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               TextField(
                 controller: _passwordController,
                 obscureText: true,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: 'New Password',
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.all(Radius.circular(10)),
                   ),
                   filled: true,
-                  fillColor: Colors.grey[50],
+                  fillColor: Color(0xFFFAFAFA),
                 ),
               ),
               const SizedBox(height: 40),
-              Container(
+              SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
                     showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: Text('Success'),
-                        content: Text('Password reset instructions sent'),
+                        title: const Text('Success'),
+                        content: const Text('Password reset instructions sent'),
                         actions: [
                           TextButton(
                             onPressed: () {
                               Navigator.pop(context);
                               Navigator.pop(context);
                             },
-                            child: Text('OK'),
+                            child: const Text('OK'),
                           ),
                         ],
                       ),
@@ -99,8 +99,8 @@ class ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3498db),
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(10)),
                     ),
                   ),
                   child: const Text(

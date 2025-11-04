@@ -1,4 +1,4 @@
-# sky_health
+# Seva Pulse
 
 A new Flutter project.
 
