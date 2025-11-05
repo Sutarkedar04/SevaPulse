@@ -104,7 +104,7 @@ class _IntroScreenState extends State<IntroScreen> with SingleTickerProviderStat
                   borderRadius: BorderRadius.circular(30),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF3498db).withValues(alpha:0.3),
+                      color: const Color(0xFF3498db).withOpacity(0.3),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
@@ -124,7 +124,7 @@ class _IntroScreenState extends State<IntroScreen> with SingleTickerProviderStat
             FadeTransition(
               opacity: _fadeAnimation,
               child: const Text(
-                'SEVA PULSE',
+                'SKY HEALTH',
                 style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.w800,
@@ -172,7 +172,7 @@ class _IntroScreenState extends State<IntroScreen> with SingleTickerProviderStat
             // Feature Highlights
             SlideTransition(
               position: _slideAnimation,
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _FeatureItem(
@@ -207,7 +207,7 @@ class _IntroScreenState extends State<IntroScreen> with SingleTickerProviderStat
                       borderRadius: BorderRadius.circular(15),
                     ),
                     elevation: 5,
-                    shadowColor: const Color(0xFF3498db).withValues(alpha:0.4),
+                    shadowColor: const Color(0xFF3498db).withOpacity(0.4),
                   ),
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -273,7 +273,7 @@ class _FeatureItem extends StatelessWidget {
           width: 60,
           height: 60,
           decoration: BoxDecoration(
-            color: const Color(0xFF3498db).withValues(alpha:0.1),
+            color: const Color(0xFF3498db).withOpacity(0.1),
             borderRadius: BorderRadius.circular(15),
           ),
           child: Icon(

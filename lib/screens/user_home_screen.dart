@@ -12,11 +12,12 @@ class UserHomeScreen extends StatefulWidget {
 
 class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  int _currentIndex = 0;
 
   final List<Map<String, dynamic>> doctors = [
     {
       'id': 1,
-      'name': 'Dr. Isha Tapekar',
+      'name': 'Dr. Sarah Johnson',
       'specialty': 'Cardiologist',
       'rating': 4.8,
       'experience': '12 years',
@@ -26,7 +27,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
     },
     {
       'id': 2,
-      'name': 'Dr. Omkar Taralkar',
+      'name': 'Dr. Michael Chen',
       'specialty': 'Neurologist',
       'rating': 4.9,
       'experience': '15 years',
@@ -36,12 +37,12 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
     },
     {
       'id': 3,
-      'name': 'Dr. Pratik Thorat',
+      'name': 'Dr. Emily Davis',
       'specialty': 'Pediatrician',
       'rating': 4.7,
       'experience': '8 years',
       'hospital': 'Children Health Center',
-      'image': '👨‍⚕️',
+      'image': '👩‍⚕️',
       'available': false,
     },
   ];
@@ -49,7 +50,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
   final List<Map<String, dynamic>> appointments = [
     {
       'id': 1,
-      'doctor': 'Dr.Isha Tapekar',
+      'doctor': 'Dr. Sarah Johnson',
       'specialty': 'Cardiologist',
       'date': '2024-01-15',
       'time': '10:00 AM',
@@ -57,7 +58,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
     },
     {
       'id': 2,
-      'doctor': 'Dr. Omkar Taralkar',
+      'doctor': 'Dr. Michael Chen',
       'specialty': 'Neurologist',
       'date': '2024-01-20',
       'time': '2:30 PM',
@@ -128,6 +129,32 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
     super.dispose();
   }
 
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Implement logout logic
+            },
+            child: const Text(
+              'Logout',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHealthMetrics() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -140,7 +167,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF3498db).withValues(alpha:0.3),
+            color: const Color(0xFF3498db).withOpacity(0.3),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -194,7 +221,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: const Color(0xFF3498db).withValues(alpha:0.1),
+              backgroundColor: const Color(0xFF3498db).withOpacity(0.1),
               radius: 30,
               child: Text(
                 doctor['image'],
@@ -243,7 +270,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: doctor['available'] ? const Color(0xFF27ae60).withValues(alpha:0.1) : Colors.grey.withValues(alpha:0.1),
+                          color: doctor['available'] ? const Color(0xFF27ae60).withOpacity(0.1) : Colors.grey.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -379,7 +406,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
           children: [
             Center(
               child: CircleAvatar(
-                backgroundColor: const Color(0xFF3498db).withValues(alpha:0.1),
+                backgroundColor: const Color(0xFF3498db).withOpacity(0.1),
                 radius: 40,
                 child: Text(
                   doctor['image'],
@@ -467,7 +494,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
     
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      color: color.withValues(alpha:0.1),
+      color: color.withOpacity(0.1),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
@@ -497,7 +524,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
                   const SizedBox(height: 4),
                   Text(
                     alert['date'],
-                    style: TextStyle(color: color.withValues(alpha:0.7), fontSize: 12),
+                    style: TextStyle(color: color.withOpacity(0.7), fontSize: 12),
                   ),
                 ],
               ),
@@ -556,7 +583,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: const Color(0xFF3498db).withValues(alpha:0.1),
+                color: const Color(0xFF3498db).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.event, color: Color(0xFF3498db), size: 30),
@@ -636,7 +663,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF3498db).withValues(alpha:0.1),
+                    color: const Color(0xFF3498db).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -746,7 +773,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFF3498db).withValues(alpha:0.1),
+                color: const Color(0xFF3498db).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -773,7 +800,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
                   color: Colors.black12,
                   blurRadius: 3,
@@ -903,7 +930,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
                     ? Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
+                          children: [
                             Icon(Icons.calendar_today, size: 64, color: Color(0xFFbdc3c7)),
                             SizedBox(height: 16),
                             Text(
@@ -963,7 +990,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
                           ? Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
+                                children: [
                                   Icon(Icons.medication, size: 64, color: Color(0xFFbdc3c7)),
                                   SizedBox(height: 16),
                                   Text(
