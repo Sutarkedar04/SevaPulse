@@ -1,26 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'screens/intro_screen.dart';
-import 'theme/app_theme.dart';
 import 'providers/auth_provider.dart';
+import 'providers/appointment_provider.dart';
+import 'providers/theme_provider.dart';
+import 'screens/auth/intro_screen.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  // Force status bar color and icon brightness for consistent UI across iOS/Android
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: AppTheme.primaryColor,
-    statusBarIconBrightness: Brightness.light,
-    statusBarBrightness: Brightness.dark,
-  ));
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-      ],
-      child: const MyApp(),
-    ),
-  );
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -28,27 +14,41 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Sky Health',
-      // Force Material platform styling so iOS and Android look identical
-      theme: AppTheme.lightTheme.copyWith(
-        platform: TargetPlatform.android,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AuthProvider>(create: (context) => AuthProvider()),
+        ChangeNotifierProvider<AppointmentProvider>(create: (context) => AppointmentProvider()),
+        ChangeNotifierProvider<ThemeProvider>(create: (context) => ThemeProvider()),
+      ],
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp(
+            title: 'Sky Health',
+            theme: themeProvider.currentTheme,
+            home: const AuthWrapper(),
+            debugShowCheckedModeBanner: false,
+          );
+        },
       ),
-      // Use a uniform scroll behaviour (no iOS bounce) across platforms
-      scrollBehavior: const _UniformScrollBehavior(),
-      home: const IntroScreen(),
-      debugShowCheckedModeBanner: false,
     );
   }
 }
 
-// Use ClampingScrollPhysics (Android-style) everywhere so scrolling
-// behaves the same on iOS and Android.
-class _UniformScrollBehavior extends MaterialScrollBehavior {
-  const _UniformScrollBehavior();
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({Key? key}) : super(key: key);
 
   @override
-  ScrollPhysics getScrollPhysics(BuildContext context) {
-    return const ClampingScrollPhysics();
+  Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    
+    if (authProvider.isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    return const IntroScreen();
   }
 }

@@ -1,58 +1,66 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import '../models/user_model.dart';
+import '../services/auth_service.dart';
 
-class AuthProvider extends ChangeNotifier {
+class AuthProvider with ChangeNotifier {
+  User? _user;
   bool _isLoading = false;
-  String? _userType;
-  bool _isAuthenticated = false;
+  String? _error;
 
+  User? get user => _user;
   bool get isLoading => _isLoading;
-  String? get userType => _userType;
-  bool get isAuthenticated => _isAuthenticated;
+  String? get error => _error;
 
-  void setLoading(bool value) {
-    _isLoading = value;
+  final AuthService _authService = AuthService();
+
+  Future<bool> login(String email, String password, String userType) async {
+    _isLoading = true;
+    _error = null;
     notifyListeners();
-  }
 
-  void setUserType(String type) {
-    _userType = type;
-    notifyListeners();
-  }
-
-  void setAuthenticated(bool value) {
-    _isAuthenticated = value;
-    notifyListeners();
-  }
-
-  Future<void> login(String email, String password) async {
-    setLoading(true);
     try {
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
-      setAuthenticated(true);
+      _user = await _authService.login(email, password, userType);
+      _isLoading = false;
+      notifyListeners();
+      return true;
     } catch (e) {
-      rethrow;
-    } finally {
-      setLoading(false);
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
   }
 
-  Future<void> signup(Map<String, String> userData) async {
-    setLoading(true);
+  Future<bool> register(User user, String password) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
     try {
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
-      setAuthenticated(true);
+      _user = await _authService.register(user, password);
+      _isLoading = false;
+      notifyListeners();
+      return true;
     } catch (e) {
-      rethrow;
-    } finally {
-      setLoading(false);
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
   }
 
   void logout() {
-    _isAuthenticated = false;
-    _userType = null;
+    _user = null;
+    _authService.logout();
     notifyListeners();
   }
+
+  // Additional helper methods
+  void clearError() {
+    _error = null;
+    notifyListeners();
+  }
+
+  bool get isPatient => _user?.userType == 'patient';
+  bool get isDoctor => _user?.userType == 'doctor';
 }
