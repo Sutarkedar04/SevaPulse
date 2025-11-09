@@ -25,9 +25,9 @@ class ThemeProvider with ChangeNotifier {
 
   static final ThemeData _darkTheme = ThemeData(
     primaryColor: const Color(0xFF3498db),
-    colorScheme: ColorScheme.dark(
-      primary: const Color(0xFF3498db),
-      secondary: const Color(0xFF2c3e50),
+    colorScheme: const ColorScheme.dark(
+      primary: Color(0xFF3498db),
+      secondary: Color(0xFF2c3e50),
     ),
     scaffoldBackgroundColor: Colors.grey[900],
   );

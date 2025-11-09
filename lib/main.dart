@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
           return MaterialApp(
-            title: 'Sky Health',
+            title: 'SEVA PULSE',
             theme: themeProvider.currentTheme,
             home: const AuthWrapper(),
             debugShowCheckedModeBanner: false,

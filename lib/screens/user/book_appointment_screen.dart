@@ -200,7 +200,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   Widget _buildDoctorCard(Map<String, dynamic> doctor) {
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: const Color(0xFF3498db).withOpacity(0.1),
+        backgroundColor: const Color(0xFF3498db).withValues(alpha: 0.1),
         child: Text(doctor['image']),
       ),
       title: Text(
@@ -239,7 +239,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                   return Card(
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: const Color(0xFF3498db).withOpacity(0.1),
+                        backgroundColor: const Color(0xFF3498db).withValues(alpha: 0.1),
                         child: Text(doctor['image']),
                       ),
                       title: Text(doctor['name']),

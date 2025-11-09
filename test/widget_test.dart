@@ -7,16 +7,17 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:sky_health/main.dart';
+import 'package:seva_pulse/main.dart';
+
 
 void main() {
-  testWidgets('Sky Health app smoke test', (WidgetTester tester) async {
+  testWidgets('Sevapulse app smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const MyApp());
 
     // Verify that the intro screen is displayed.
-    expect(find.text('SKY HEALTH'), findsOneWidget);
-    expect(find.text('IMPROVE YOUR LIFETIME'), findsOneWidget);
+    expect(find.text('SEVA PULSE'), findsOneWidget);
+    expect(find.text('Your Health, Our Priority'), findsOneWidget);
     expect(find.text('GET STARTED'), findsOneWidget);
   });
 }

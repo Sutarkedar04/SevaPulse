@@ -12,9 +12,10 @@ dependencies:
   flutter:
     sdk: flutter
   provider: ^6.0.5
-  http: ^0.13.5
+  http: ^1.1.0
   shared_preferences: ^2.2.2
   intl: ^0.18.1
+  google_fonts: ^6.3.2  # Add this line here
 
 dev_dependencies:
   flutter_test:
@@ -23,5 +24,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
-  

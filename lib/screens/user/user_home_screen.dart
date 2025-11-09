@@ -111,9 +111,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
   }
 
   void _loadData() {
-    final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
-    
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
       appointmentProvider.loadAppointments();
     });
   }
@@ -402,6 +401,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
     if (picked != null) {
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Selected date: ${DateFormat('yyyy-MM-dd').format(picked)}'),
@@ -417,6 +417,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
       initialTime: TimeOfDay.now(),
     );
     if (picked != null) {
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Selected time: ${picked.format(context)}'),
@@ -1021,17 +1022,17 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
               );
             },
           ),
-          PopupMenuButton(
+          PopupMenuButton<String>(
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              const PopupMenuItem<String>(
                 value: 'profile',
                 child: Text('My Profile'),
               ),
-              const PopupMenuItem(
+              const PopupMenuItem<String>(
                 value: 'settings',
                 child: Text('Settings'),
               ),
-              const PopupMenuItem(
+              const PopupMenuItem<String>(
                 value: 'logout',
                 child: Text('Logout', style: TextStyle(color: Colors.red)),
               ),
@@ -1258,21 +1259,21 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
               ),
               Expanded(
                 child: medicines.isEmpty
-                    ? Center(
+                    ? const Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.medication, size: 64, color: Color(0xFFbdc3c7)),
-                            const SizedBox(height: 16),
-                            const Text(
+                            Icon(Icons.medication, size: 64, color: Color(0xFFbdc3c7)),
+                            SizedBox(height: 16),
+                            Text(
                               'No Medicines',
                               style: TextStyle(
                                 fontSize: 18,
                                 color: Color(0xFF7f8c8d),
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            const Text(
+                            SizedBox(height: 8),
+                            Text(
                               'Add your first medicine reminder',
                               style: TextStyle(
                                 color: Color(0xFFbdc3c7),

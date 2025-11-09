@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_textfield.dart';
@@ -30,7 +31,18 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
   }
 
   void _loadSavedCredentials() async {
-    // TODO: Load from shared_preferences
+    final prefs = await SharedPreferences.getInstance();
+    final savedEmail = prefs.getString('saved_email') ?? '';
+    final savedPassword = prefs.getString('saved_password') ?? '';
+    final rememberMe = prefs.getBool('remember_me') ?? false;
+
+    if (rememberMe && savedEmail.isNotEmpty && savedPassword.isNotEmpty) {
+      _emailController.text = savedEmail;
+      _passwordController.text = savedPassword;
+      setState(() {
+        _rememberMe = true;
+      });
+    }
     // For now, we'll set some demo values
     _emailController.text = 'patient@test.com';
     _passwordController.text = 'password';
@@ -51,18 +63,24 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
 
       if (success) {
         if (_rememberMe) {
-          // TODO: Save credentials to shared_preferences
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('saved_email', _emailController.text.trim());
+          await prefs.setString('saved_password', _passwordController.text);
+          await prefs.setBool('remember_me', true);
         }
         
+        // ignore: use_build_context_synchronously
         Helpers.showSnackBar(context, 'Login successful!');
         
         Navigator.pushAndRemoveUntil(
+          // ignore: use_build_context_synchronously
           context,
           MaterialPageRoute(builder: (context) => const UserHomeScreen()),
           (route) => false,
         );
       } else {
         Helpers.showSnackBar(
+          // ignore: use_build_context_synchronously
           context, 
           authProvider.error ?? 'Login failed', 
           isError: true
@@ -74,7 +92,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
   void _navigateToRegister() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => UserRegisterScreen()),
+      MaterialPageRoute(builder: (context) => const UserRegisterScreen()),
     );
   }
 
@@ -420,9 +438,9 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
         width: 50,
         height: 50,
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Icon(icon, color: color, size: 24),
       ),
@@ -430,51 +448,6 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
   }
 
   // Demo Login Buttons for Testing
-  Widget _buildDemoLoginButtons() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 20),
-        const Text(
-          'Demo Accounts:',
-          style: TextStyle(
-            color: Color(0xFF7f8c8d),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          children: [
-            ElevatedButton(
-              onPressed: () {
-                _emailController.text = 'patient@test.com';
-                _passwordController.text = 'password';
-                _login();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF27ae60),
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Patient Demo'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                _emailController.text = 'doctor@test.com';
-                _passwordController.text = 'password';
-                _login();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFe74c3c),
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Doctor Demo'),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
 
   @override
   void dispose() {

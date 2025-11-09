@@ -65,7 +65,7 @@ class _IntroScreenState extends State<IntroScreen> with SingleTickerProviderStat
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF3498db).withOpacity(0.3),
+                        color: const Color(0xFF3498db).withValues(alpha: 0.3),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -85,7 +85,7 @@ class _IntroScreenState extends State<IntroScreen> with SingleTickerProviderStat
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: const Text(
-                  'SKY HEALTH',
+                  'SEVA PULSE',
                   style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.w800,
