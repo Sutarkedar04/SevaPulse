@@ -4,8 +4,10 @@ import 'providers/auth_provider.dart';
 import 'providers/appointment_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/auth/intro_screen.dart';
+import 'screens/user/user_home_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -27,6 +29,7 @@ class MyApp extends StatelessWidget {
             theme: themeProvider.currentTheme,
             home: const AuthWrapper(),
             debugShowCheckedModeBanner: false,
+            navigatorKey: GlobalKey<NavigatorState>(),
           );
         },
       ),
@@ -34,21 +37,82 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({Key? key}) : super(key: key);
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    if (state == AppLifecycleState.resumed && mounted) {
+      setState(() {
+        // Trigger rebuild when app resumes to refresh any time-sensitive data
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     
-    if (authProvider.isLoading) {
+    // Show loading screen while initializing
+    if (authProvider.isInitializing) {
       return const Scaffold(
+        backgroundColor: Color(0xFF3498db),
         body: Center(
-          child: CircularProgressIndicator(),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+              SizedBox(height: 20),
+              Text(
+                'SEVA PULSE',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 10),
+              Text(
+                'Loading...',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
-
-    return const IntroScreen();
+    
+    // Check authentication state after initialization
+    if (authProvider.isAuthenticated) {
+      // User is logged in
+      return const UserHomeScreen();
+    } else {
+      // User is not logged in
+      return const IntroScreen();
+    }
   }
 }
