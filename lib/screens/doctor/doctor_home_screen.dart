@@ -3,6 +3,7 @@ import 'patients_screen.dart';
 import 'events_screen.dart';
 import 'profile_screen.dart';
 import '../auth/user_selection_screen.dart';
+import '../../services/appointment_service.dart';
 
 class DoctorHomeScreen extends StatefulWidget {
   const DoctorHomeScreen({Key? key}) : super(key: key);
@@ -14,72 +15,9 @@ class DoctorHomeScreen extends StatefulWidget {
 class _DoctorHomeScreenState extends State<DoctorHomeScreen> with WidgetsBindingObserver {
   int _currentIndex = 0;
   bool _isInitialized = false;
-
-  final List<Map<String, dynamic>> appointments = [
-    {
-      'id': 1,
-      'patientName': 'Namesh Patil',
-      'time': '10:00 AM',
-      'date': '2025-09-23',
-      'type': 'Follow-up',
-      'status': 'confirmed',
-      'patientId': 'P001',
-      'symptoms': 'Chest pain, shortness of breath',
-      'priority': 'high',
-    },
-    {
-      'id': 2,
-      'patientName': 'Ramesh Mane',
-      'time': '2:30 PM',
-      'date': '2025-09-23',
-      'type': 'New Patient',
-      'status': 'confirmed',
-      'patientId': 'P002',
-      'symptoms': 'Headache, dizziness',
-      'priority': 'medium',
-    },
-    {
-      'id': 3,
-      'patientName': 'Govind Panchal',
-      'time': '4:00 PM',
-      'date': '2025-09-23',
-      'type': 'Consultation',
-      'status': 'pending',
-      'patientId': 'P003',
-      'symptoms': 'Fever, cough',
-      'priority': 'low',
-    },
-  ];
-
-  final List<Map<String, dynamic>> patients = [
-    {
-      'id': 'P001',
-      'name': 'Namesh Patil',
-      'age': 45,
-      'gender': 'Male',
-      'lastVisit': '2025-08-15',
-      'condition': 'Hypertension',
-      'emergencyContact': true,
-    },
-    {
-      'id': 'P002',
-      'name': 'Ramesh Mane',
-      'age': 32,
-      'gender': 'Female',
-      'lastVisit': '2025-09-10',
-      'condition': 'Migraine',
-      'emergencyContact': false,
-    },
-    {
-      'id': 'P003',
-      'name': 'Govind Panchal',
-      'age': 28,
-      'gender': 'Male',
-      'lastVisit': '2025-08-20',
-      'condition': 'Seasonal Flu',
-      'emergencyContact': true,
-    },
-  ];
+  final AppointmentService _appointmentService = AppointmentService();
+  late List<Map<String, dynamic>> _todayAppointments;
+  late List<Map<String, dynamic>> _patients;
 
   final List<Map<String, dynamic>> medicalEvents = [
     {
@@ -135,9 +73,27 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with WidgetsBinding
   void _initializeScreen() {
     // Always start with dashboard
     _currentIndex = 0;
+    _refreshAppointments();
+    _refreshPatients();
     _isInitialized = true;
     
     // Force rebuild to ensure UI is consistent
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _refreshAppointments() {
+    // Get today's appointments from the service
+    _todayAppointments = _appointmentService.getAppointmentsForDoctor('doctor1');
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _refreshPatients() {
+    // Get all patients for this doctor
+    _patients = _appointmentService.getAllPatientsForDoctor('doctor1');
     if (mounted) {
       setState(() {});
     }
@@ -147,6 +103,8 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with WidgetsBinding
     if (mounted) {
       setState(() {
         _currentIndex = 0;
+        _refreshAppointments();
+        _refreshPatients();
       });
     }
   }
@@ -343,6 +301,10 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with WidgetsBinding
     if (appointment['priority'] == 'high') priorityColor = const Color(0xFFe74c3c);
     if (appointment['priority'] == 'medium') priorityColor = const Color(0xFFf39c12);
 
+    Color statusColor = const Color(0xFFf39c12); // pending - orange
+    if (appointment['status'] == 'confirmed') statusColor = const Color(0xFF27ae60); // confirmed - green
+    if (appointment['status'] == 'cancelled') statusColor = const Color(0xFFe74c3c); // cancelled - red
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 3,
@@ -357,34 +319,78 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with WidgetsBinding
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  appointment['patientName'],
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Color(0xFF2c3e50),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        appointment['patientName'],
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Color(0xFF2c3e50),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'ID: ${appointment['patientId']}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF7f8c8d),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Email: ${appointment['patientEmail'] ?? 'N/A'}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF7f8c8d),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: priorityColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    appointment['priority'].toString().toUpperCase(),
-                    style: TextStyle(
-                      color: priorityColor,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 12,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: priorityColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        appointment['priority'].toString().toUpperCase(),
+                        style: TextStyle(
+                          color: priorityColor,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        appointment['status'].toString().toUpperCase(),
+                        style: TextStyle(
+                          color: statusColor,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
             const SizedBox(height: 8),
             Text(
-              '${appointment['time']} • ${appointment['date']}',
+              '${appointment['time']} • ${appointment['date']} • ${appointment['type']}',
               style: const TextStyle(color: Color(0xFF7f8c8d)),
             ),
             const SizedBox(height: 8),
@@ -395,38 +401,92 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with WidgetsBinding
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      // Reschedule appointment
-                    },
-                    style: OutlinedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                if (appointment['status'] == 'pending') ...[
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        _appointmentService.updateAppointmentStatus(appointment['id'], 'confirmed');
+                        _refreshAppointments();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Appointment with ${appointment['patientName']} confirmed'),
+                            backgroundColor: const Color(0xFF27ae60),
+                          ),
+                        );
+                      },
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
+                      child: const Text('Confirm'),
                     ),
-                    child: const Text('Reschedule'),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Start consultation
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3498db),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        _appointmentService.updateAppointmentStatus(appointment['id'], 'cancelled');
+                        _refreshAppointments();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Appointment with ${appointment['patientName']} cancelled'),
+                            backgroundColor: const Color(0xFFe74c3c),
+                          ),
+                        );
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFe74c3c),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
+                      child: const Text('Cancel'),
                     ),
-                    child: const Text('Start Consult'),
                   ),
-                ),
+                ] else if (appointment['status'] == 'confirmed') ...[
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        _showRescheduleDialog(appointment);
+                      },
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Reschedule'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        _startConsultation(appointment);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3498db),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Start Consult'),
+                    ),
+                  ),
+                ],
                 const SizedBox(width: 8),
                 IconButton(
                   onPressed: () {
-                    final patient = patients.firstWhere((p) => p['id'] == appointment['patientId']);
+                    final patient = _patients.firstWhere(
+                      (p) => p['id'] == appointment['patientId'],
+                      orElse: () => {
+                        'id': appointment['patientId'],
+                        'name': appointment['patientName'],
+                        'email': appointment['patientEmail'],
+                        'age': 'Unknown',
+                        'gender': 'Unknown',
+                      },
+                    );
                     _showPrescriptionDialog(patient);
                   },
                   icon: const Icon(Icons.medical_services, color: Color(0xFF27ae60)),
@@ -438,6 +498,52 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with WidgetsBinding
         ),
       ),
     );
+  }
+
+  void _showRescheduleDialog(Map<String, dynamic> appointment) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Reschedule ${appointment['patientName']}'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Reschedule functionality would go here...'),
+            SizedBox(height: 16),
+            Text('Date picker, time selection, etc.'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Appointment with ${appointment['patientName']} rescheduled'),
+                  backgroundColor: const Color(0xFF27ae60),
+                ),
+              );
+            },
+            child: const Text('Reschedule'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _startConsultation(Map<String, dynamic> appointment) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Starting consultation with ${appointment['patientName']}'),
+        backgroundColor: const Color(0xFF27ae60),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+    // Navigate to consultation screen or start video call
   }
 
   Widget _buildDashboardTab() {
@@ -491,6 +597,14 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with WidgetsBinding
                           doctorProfile['specialization'],
                           style: const TextStyle(color: Color(0xFF7f8c8d)),
                         ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${_todayAppointments.length} appointments today',
+                          style: const TextStyle(
+                            color: Color(0xFF3498db),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -501,16 +615,55 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with WidgetsBinding
           const SizedBox(height: 20),
 
           // Today's Appointments Section
-          const Text(
-            "Today's Appointments",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF2c3e50),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Today's Appointments",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2c3e50),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.refresh, color: Color(0xFF3498db)),
+                onPressed: _refreshAppointments,
+                tooltip: 'Refresh Appointments',
+              ),
+            ],
           ),
           const SizedBox(height: 12),
-          ...appointments.map((appointment) => _buildAppointmentCard(appointment)),
+          
+          if (_todayAppointments.isEmpty)
+            const Card(
+              child: Padding(
+                padding: EdgeInsets.all(32.0),
+                child: Column(
+                  children: [
+                    Icon(Icons.event_available, size: 64, color: Color(0xFFbdc3c7)),
+                    SizedBox(height: 16),
+                    Text(
+                      'No appointments for today',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF7f8c8d),
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Appointments booked by patients will appear here',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Color(0xFF95a5a6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            ..._todayAppointments.map((appointment) => _buildAppointmentCard(appointment)),
         ],
       ),
     );
@@ -522,7 +675,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with WidgetsBinding
         return _buildDashboardTab();
       case 1:
         return PatientsScreen(
-          patients: patients,
+          patients: _patients,
           onPrescriptionPressed: _showPrescriptionDialog,
         );
       case 2:

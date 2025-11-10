@@ -10,21 +10,27 @@ class DoctorListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final List<Map<String, dynamic>> doctors = [
       {
+        'id': 'doctor1',
         'name': 'Dr. Evelyn Reed',
         'title': 'Senior Cardiologist',
         'experience': '15+ Years of Experience',
+        'hospital': 'City Heart Center',
         'available': true,
       },
       {
+        'id': 'doctor2', 
         'name': 'Dr. Marcus Chen',
         'title': 'Cardiologist, MD, FACC',
         'experience': '12+ Years of Experience',
+        'hospital': 'City Heart Center',
         'available': true,
       },
       {
+        'id': 'doctor3',
         'name': 'Dr. Sofia Alvarez',
-        'title': 'Pediatric Cardiologist',
+        'title': 'Pediatric Cardiologist', 
         'experience': '10+ Years of Experience',
+        'hospital': 'City Heart Center',
         'available': true,
       },
     ];
@@ -147,7 +153,7 @@ class DoctorListScreen extends StatelessWidget {
                         MaterialPageRoute(
                           builder: (context) => BookAppointmentScreen(
                             doctor: doctor,
-                            specialty: specialty, doctors: const [], selectedDoctor: const {},
+                            specialty: specialty,
                           ),
                         ),
                       );
@@ -202,7 +208,7 @@ class DoctorListScreen extends StatelessWidget {
                 MaterialPageRoute(
                   builder: (context) => BookAppointmentScreen(
                     doctor: doctor,
-                    specialty: specialty, doctors: const [], selectedDoctor: const {},
+                    specialty: specialty,
                   ),
                 ),
               );

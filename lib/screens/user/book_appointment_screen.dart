@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../services/appointment_service.dart';
 
 class BookAppointmentScreen extends StatefulWidget {
-  final Map<String, dynamic>? doctor;
-  final String? specialty;
+  final Map<String, dynamic> doctor;
+  final String specialty;
 
   const BookAppointmentScreen({
     Key? key,
-    this.doctor,
-    this.specialty, required List<Map<String, dynamic>> doctors, required Map<String, dynamic> selectedDoctor,
+    required this.doctor,
+    required this.specialty,
   }) : super(key: key);
 
   @override
@@ -18,22 +21,68 @@ class BookAppointmentScreen extends StatefulWidget {
 class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
+  String? _selectedSlot;
+  final AppointmentService _appointmentService = AppointmentService();
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final user = authProvider.user;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Book Appointment'),
         backgroundColor: const Color(0xFF3498db),
         foregroundColor: Colors.white,
       ),
-      body: _selectedDate == null ? _buildDateSelection() : _buildTimeSelection(),
+      body: _selectedDate == null ? _buildDateSelection(user) : _buildTimeSelection(user),
     );
   }
 
-  Widget _buildDateSelection() {
+  Widget _buildDateSelection(user) {
     return Column(
       children: [
+        // Doctor Info Card
+        Card(
+          margin: const EdgeInsets.all(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: const Color(0xFF3498db).withOpacity(0.1),
+                  child: const Icon(Icons.medical_services, color: Color(0xFF3498db)),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.doctor['name'],
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2c3e50),
+                        ),
+                      ),
+                      Text(
+                        widget.specialty,
+                        style: const TextStyle(color: Color(0xFF7f8c8d)),
+                      ),
+                      Text(
+                        widget.doctor['hospital'] ?? 'City Hospital',
+                        style: const TextStyle(color: Color(0xFF7f8c8d)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
         // Header
         Container(
           padding: const EdgeInsets.all(16),
@@ -114,11 +163,9 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         Padding(
           padding: const EdgeInsets.all(16),
           child: ElevatedButton(
-            onPressed: () {
-              setState(() {
-                _selectedDate = DateTime(2024, 10, 24); // Default to Oct 24
-              });
-            },
+            onPressed: _selectedDate != null ? () {
+              setState(() {});
+            } : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF3498db),
               foregroundColor: Colors.white,
@@ -171,7 +218,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
     );
   }
 
-  Widget _buildTimeSelection() {
+  Widget _buildTimeSelection(user) {
     final availableSlots = [
       '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
       '11:00 AM', '02:00 PM', '02:30 PM', '03:00 PM', '04:30 PM'
@@ -179,7 +226,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
 
     return Column(
       children: [
-        // Header
+        // Header with back button
         Container(
           padding: const EdgeInsets.all(16),
           color: const Color(0xFFf8f9fa),
@@ -189,14 +236,15 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                 onPressed: () {
                   setState(() {
                     _selectedDate = null;
+                    _selectedSlot = null;
                   });
                 },
                 icon: const Icon(Icons.arrow_back),
               ),
               const SizedBox(width: 8),
-              const Text(
-                'Available Slots for October 24',
-                style: TextStyle(
+              Text(
+                'Available Slots for ${DateFormat('MMMM d').format(_selectedDate!)}',
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF2c3e50),
@@ -219,16 +267,20 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
             itemCount: availableSlots.length,
             itemBuilder: (context, index) {
               final slot = availableSlots[index];
+              final isSelected = _selectedSlot == slot;
+              
               return ElevatedButton(
                 onPressed: () {
                   setState(() {
+                    _selectedSlot = slot;
                     _selectedTime = _parseTime(slot);
                   });
-                  _showConfirmationDialog();
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF3498db),
-                  foregroundColor: Colors.white,
+                  backgroundColor: isSelected 
+                      ? const Color(0xFF3498db)
+                      : const Color(0xFFecf0f1),
+                  foregroundColor: isSelected ? Colors.white : const Color(0xFF2c3e50),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -243,7 +295,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         Padding(
           padding: const EdgeInsets.all(16),
           child: ElevatedButton(
-            onPressed: _selectedTime != null ? _showConfirmationDialog : null,
+            onPressed: _selectedTime != null ? () => _showConfirmationDialog(user) : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF3498db),
               foregroundColor: Colors.white,
@@ -265,7 +317,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
     return TimeOfDay.fromDateTime(date);
   }
 
-  void _showConfirmationDialog() {
+  void _showConfirmationDialog(user) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -274,19 +326,33 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (widget.doctor != null) ...[
-              Text(
-                widget.doctor!['name'],
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
+            // Doctor Info
+            Text(
+              widget.doctor['name'],
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
               ),
-              Text(widget.specialty ?? ''),
-            ],
+            ),
+            Text(widget.specialty),
             const SizedBox(height: 16),
-            const Text('Monday, October 28, 2024'),
-            Text(_selectedTime?.format(context) ?? '10:30 AM'),
+            
+            // Appointment Details
+            const Text(
+              'Appointment Details:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text('Date: ${DateFormat('EEEE, MMMM d, yyyy').format(_selectedDate!)}'),
+            Text('Time: $_selectedSlot'),
+            const SizedBox(height: 8),
+            
+            // Patient Info
+            const Text(
+              'Patient Details:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text('Name: ${user?.name ?? "User"}'),
+            Text('Email: ${user?.email ?? "N/A"}'),
           ],
         ),
         actions: [
@@ -296,8 +362,8 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
           ),
           ElevatedButton(
             onPressed: () {
+              _bookAppointment(user);
               Navigator.pop(context);
-              _showSuccessDialog();
             },
             child: const Text('Confirm Booking'),
           ),
@@ -306,14 +372,45 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
     );
   }
 
+  void _bookAppointment(user) {
+    // Create appointment object
+    final newAppointment = {
+      'patientName': user?.name ?? 'User',
+      'time': _selectedSlot!,
+      'date': DateFormat('yyyy-MM-dd').format(_selectedDate!),
+      'type': 'Consultation',
+      'status': 'pending',
+      'patientId': user?.id ?? 'user_${DateTime.now().millisecondsSinceEpoch}',
+      'patientEmail': user?.email ?? 'N/A',
+      'symptoms': 'General Consultation',
+      'priority': 'medium',
+      'doctorId': widget.doctor['id'] ?? 'doctor1',
+      'doctorName': widget.doctor['name'],
+      'specialty': widget.specialty,
+    };
+
+    // Add to appointment service
+    _appointmentService.addAppointment(newAppointment);
+
+    // Show success dialog
+    _showSuccessDialog();
+  }
+
   void _showSuccessDialog() {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Booking Successful!'),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Color(0xFF27ae60)),
+            SizedBox(width: 8),
+            Text('Booking Successful!'),
+          ],
+        ),
         content: const Text(
           'Your appointment has been successfully scheduled. '
-          'We\'ve sent a confirmation to your email.',
+          'The doctor will review and confirm your appointment.',
         ),
         actions: [
           TextButton(
