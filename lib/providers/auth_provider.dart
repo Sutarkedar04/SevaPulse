@@ -57,7 +57,7 @@ class AuthProvider with ChangeNotifier {
       
       // Save user data to shared preferences
       if (_user != null) {
-        final prefs = _prefs ?? await SharedPreferences.getInstance();
+        // Removed unused variable 'prefs'
         // You'll need to implement toJson in your User model
         // await prefs.setString('user_data', _user!.toJson());
       }

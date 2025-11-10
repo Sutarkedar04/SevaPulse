@@ -5,6 +5,7 @@ import 'providers/appointment_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/auth/intro_screen.dart';
 import 'screens/user/user_home_screen.dart';
+import 'screens/doctor/doctor_home_screen.dart'; // Add this import
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -108,8 +109,14 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
     
     // Check authentication state after initialization
     if (authProvider.isAuthenticated) {
-      // User is logged in
-      return const UserHomeScreen();
+      // User is logged in - check user type
+      if (authProvider.isDoctor) {
+        // Navigate to DoctorHomeScreen with UniqueKey to ensure fresh instance
+        return DoctorHomeScreen(key: UniqueKey());
+      } else {
+        // Navigate to UserHomeScreen
+        return const UserHomeScreen();
+      }
     } else {
       // User is not logged in
       return const IntroScreen();

@@ -19,8 +19,6 @@ class UserHomeScreen extends StatefulWidget {
 class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
   late AnimationController _animationController;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _fadeAnimation;
 
   // Pages for bottom navigation
   final List<Widget> _pages = [
@@ -38,21 +36,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
       vsync: this,
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(-1.0, 0.0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
 
     // Start animation after build
     WidgetsBinding.instance.addPostFrameCallback((_) {

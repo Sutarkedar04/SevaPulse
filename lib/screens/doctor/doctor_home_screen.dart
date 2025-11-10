@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'patients_screen.dart';
+import 'events_screen.dart';
+import 'profile_screen.dart';
+import '../auth/user_selection_screen.dart';
 
 class DoctorHomeScreen extends StatefulWidget {
   const DoctorHomeScreen({Key? key}) : super(key: key);
@@ -7,8 +11,9 @@ class DoctorHomeScreen extends StatefulWidget {
   State<DoctorHomeScreen> createState() => _DoctorHomeScreenState();
 }
 
-class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _DoctorHomeScreenState extends State<DoctorHomeScreen> with WidgetsBindingObserver {
+  int _currentIndex = 0;
+  bool _isInitialized = false;
 
   final List<Map<String, dynamic>> appointments = [
     {
@@ -76,25 +81,6 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
     },
   ];
 
-  final List<Map<String, dynamic>> emergencies = [
-    {
-      'id': 1,
-      'patientName': 'Namesh Patil',
-      'time': '09:15 AM',
-      'condition': 'Severe Chest Pain',
-      'priority': 'critical',
-      'location': 'Emergency Ward',
-    },
-    {
-      'id': 2,
-      'patientName': 'Ramesh Mane',
-      'time': '10:30 AM',
-      'condition': 'Breathing Difficulty',
-      'priority': 'high',
-      'location': 'ICU',
-    },
-  ];
-
   final List<Map<String, dynamic>> medicalEvents = [
     {
       'title': 'Free Diabetes Screening Camp',
@@ -128,13 +114,41 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    WidgetsBinding.instance.addObserver(this);
+    _initializeScreen();
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isInitialized) {
+      // Reset state when app comes back to foreground
+      _resetToDashboard();
+    }
+  }
+
+  void _initializeScreen() {
+    // Always start with dashboard
+    _currentIndex = 0;
+    _isInitialized = true;
+    
+    // Force rebuild to ensure UI is consistent
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _resetToDashboard() {
+    if (mounted) {
+      setState(() {
+        _currentIndex = 0;
+      });
+    }
   }
 
   void _showLogoutDialog() {
@@ -151,7 +165,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              // Implement logout logic
+              _performLogout();
             },
             child: const Text(
               'Logout',
@@ -160,6 +174,15 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
           ),
         ],
       ),
+    );
+  }
+
+  void _performLogout() {
+    // Clear navigation stack completely and redirect to UserSelectionScreen
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const UserSelectionScreen()),
+      (route) => false,
     );
   }
 
@@ -345,7 +368,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: priorityColor.withValues(alpha:0.1),
+                    color: priorityColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -417,253 +440,104 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
     );
   }
 
-  Widget _buildPatientCard(Map<String, dynamic> patient) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: const Color(0xFF3498db).withValues(alpha:0.1),
-              radius: 25,
-              child: Text(
-                patient['name'][0],
-                style: const TextStyle(
-                  color: Color(0xFF3498db),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    patient['name'],
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2c3e50),
-                    ),
-                  ),
-                  Text(
-                    '${patient['age']} years • ${patient['gender']}',
-                    style: const TextStyle(color: Color(0xFF7f8c8d)),
-                  ),
-                  Text(
-                    'Condition: ${patient['condition']}',
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF2c3e50)),
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              children: [
-                IconButton(
-                  onPressed: () {
-                    _showPrescriptionDialog(patient);
-                  },
-                  icon: const Icon(Icons.medical_services, color: Color(0xFF27ae60)),
-                  tooltip: 'Write Prescription',
-                ),
-                IconButton(
-                  onPressed: () {
-                    // Start chat with patient
-                  },
-                  icon: const Icon(Icons.chat, color: Color(0xFF3498db)),
-                  tooltip: 'Chat with Patient',
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmergencyCard(Map<String, dynamic> emergency) {
-    Color priorityColor = const Color(0xFFe74c3c);
-    IconData priorityIcon = Icons.warning_amber;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      color: priorityColor.withValues(alpha:0.1),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(priorityIcon, color: priorityColor, size: 32),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    emergency['patientName'],
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: priorityColor,
-                      fontSize: 16,
-                    ),
-                  ),
-                  Text(
-                    emergency['condition'],
-                    style: const TextStyle(color: Color(0xFF2c3e50)),
-                  ),
-                  Text(
-                    'Location: ${emergency['location']}',
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF7f8c8d)),
-                  ),
-                ],
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                // Handle emergency
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: priorityColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text('Attend', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEventCard(Map<String, dynamic> event) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              event['title'],
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2c3e50),
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.calendar_today, size: 16, color: Color(0xFF7f8c8d)),
-                const SizedBox(width: 4),
-                Text('${event['date']} at ${event['time']}'),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(Icons.location_on, size: 16, color: Color(0xFF7f8c8d)),
-                const SizedBox(width: 4),
-                Text(event['location']),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${event['registeredPatients']} patients registered',
-                  style: const TextStyle(color: Color(0xFF3498db)),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    // Send reminder to patients
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Reminders sent to all registered patients'),
-                        backgroundColor: Color(0xFF27ae60),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3498db),
-                  ),
-                  child: const Text('Send Reminder'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            Text(
-              title,
-              style: const TextStyle(
-                color: Color(0xFF7f8c8d),
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfileDetail(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
+  Widget _buildDashboardTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '$label: ',
-            style: const TextStyle(
-              fontWeight: FontWeight.w500,
+          // Image below navbar and above welcome text
+          Container(
+            height: 150,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              image: const DecorationImage(
+                image: AssetImage('assets/images/userfirstimg.png'),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Welcome Card
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: const Color(0xFF3498db).withOpacity(0.1),
+                    child: const Icon(Icons.medical_services, color: Color(0xFF3498db), size: 30),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Welcome, ${doctorProfile['name']}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2c3e50),
+                          ),
+                        ),
+                        Text(
+                          doctorProfile['specialization'],
+                          style: const TextStyle(color: Color(0xFF7f8c8d)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Today's Appointments Section
+          const Text(
+            "Today's Appointments",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
               color: Color(0xFF2c3e50),
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(color: Color(0xFF7f8c8d)),
-            ),
-          ),
+          const SizedBox(height: 12),
+          ...appointments.map((appointment) => _buildAppointmentCard(appointment)),
         ],
       ),
     );
+  }
+
+  Widget _getCurrentTab() {
+    switch (_currentIndex) {
+      case 0:
+        return _buildDashboardTab();
+      case 1:
+        return PatientsScreen(
+          patients: patients,
+          onPrescriptionPressed: _showPrescriptionDialog,
+        );
+      case 2:
+        return EventsScreen(
+          medicalEvents: medicalEvents,
+          onCreateEventPressed: _showEventCreationDialog,
+        );
+      case 3:
+        return ProfileScreen(
+          doctorProfile: doctorProfile,
+          onLogoutPressed: _showLogoutDialog,
+        );
+      default:
+        return _buildDashboardTab();
+    }
   }
 
   @override
@@ -672,7 +546,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
       backgroundColor: const Color(0xFFf8f9fa),
       appBar: AppBar(
         title: const Text(
-          'Doctor Dashboard',
+          'SEVA PULSE',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -680,380 +554,84 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with SingleTickerPr
         ),
         backgroundColor: const Color(0xFF3498db),
         foregroundColor: Colors.white,
-        actions: [
+        actions: _currentIndex == 0 ? [
           IconButton(
-            icon: const Icon(Icons.notifications_active),
-            onPressed: () {},
+            icon: const Icon(Icons.notifications_none),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('No new notifications'),
+                  backgroundColor: Color(0xFF27ae60),
+                ),
+              );
+            },
           ),
-          PopupMenuButton(
+          PopupMenuButton<String>(
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              const PopupMenuItem<String>(
                 value: 'profile',
                 child: Text('My Profile'),
               ),
-              const PopupMenuItem(
+              const PopupMenuItem<String>(
                 value: 'settings',
                 child: Text('Settings'),
               ),
-              const PopupMenuItem(
+              const PopupMenuItem<String>(
                 value: 'logout',
                 child: Text('Logout', style: TextStyle(color: Colors.red)),
               ),
             ],
             onSelected: (value) {
-              switch (value) {
-                case 'logout':
-                  _showLogoutDialog();
-                  break;
+              if (value == 'logout') {
+                _showLogoutDialog();
+              } else if (value == 'profile') {
+                setState(() {
+                  _currentIndex = 3;
+                });
               }
             },
           ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          indicatorColor: Colors.white,
-          tabs: const [
-            Tab(icon: Icon(Icons.dashboard), text: 'Dashboard'),
-            Tab(icon: Icon(Icons.people), text: 'Patients'),
-            Tab(icon: Icon(Icons.event), text: 'Events'),
-            Tab(icon: Icon(Icons.person), text: 'Profile'),
-          ],
-        ),
+        ] : null,
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          // Dashboard Tab
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Welcome Card
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: const Color(0xFF3498db).withValues(alpha:0.1),
-                          child: const Icon(Icons.medical_services, color: Color(0xFF3498db), size: 30),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Welcome, ${doctorProfile['name']}',
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF2c3e50),
-                                ),
-                              ),
-                              Text(
-                                doctorProfile['specialization'],
-                                style: const TextStyle(color: Color(0xFF7f8c8d)),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Stats Overview
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  childAspectRatio: 1.5,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  children: [
-                    _buildStatCard('Today\'s Appointments', appointments.length.toString(), Icons.calendar_today, const Color(0xFF3498db)),
-                    _buildStatCard('Total Patients', patients.length.toString(), Icons.people, const Color(0xFF27ae60)),
-                    _buildStatCard('Medical Events', medicalEvents.length.toString(), Icons.event, const Color(0xFFf39c12)),
-                    _buildStatCard('Emergencies', emergencies.length.toString(), Icons.warning, const Color(0xFFe74c3c)),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Emergencies Section
-                if (emergencies.isNotEmpty) ...[
-                  const Text(
-                    'Emergency Cases',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2c3e50),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ...emergencies.map((emergency) => _buildEmergencyCard(emergency)),
-                  const SizedBox(height: 20),
-                ],
-
-                // Today's Appointments
-                const Text(
-                  "Today's Appointments",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2c3e50),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ...appointments.map((appointment) => _buildAppointmentCard(appointment)),
-              ],
-            ),
+      body: _getCurrentTab(),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+        selectedItemColor: const Color(0xFF3498db),
+        unselectedItemColor: const Color(0xFF7f8c8d),
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard),
+            label: 'Dashboard',
           ),
-
-          // Patients Tab
-          Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'My Patients',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2c3e50),
-                      ),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        // Add new patient
-                      },
-                      icon: const Icon(Icons.person_add),
-                      label: const Text('Add Patient'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3498db),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: patients.isEmpty
-                    ? const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.people, size: 64, color: Color(0xFFbdc3c7)),
-                            SizedBox(height: 16),
-                            Text(
-                              'No Patients',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Color(0xFF7f8c8d),
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Patients will appear here',
-                              style: TextStyle(
-                                color: Color(0xFFbdc3c7),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: patients.length,
-                        itemBuilder: (context, index) => _buildPatientCard(patients[index]),
-                      ),
-              ),
-            ],
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people),
+            label: 'Patients',
           ),
-
-          // Events Tab
-          Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Medical Events & Camps',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2c3e50),
-                      ),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: _showEventCreationDialog,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Create Event'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF27ae60),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: medicalEvents.isEmpty
-                    ? const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.event, size: 64, color: Color(0xFFbdc3c7)),
-                            SizedBox(height: 16),
-                            Text(
-                              'No Events',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Color(0xFF7f8c8d),
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Create your first medical event',
-                              style: TextStyle(
-                                color: Color(0xFFbdc3c7),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: medicalEvents.length,
-                        itemBuilder: (context, index) => _buildEventCard(medicalEvents[index]),
-                      ),
-              ),
-            ],
+          BottomNavigationBarItem(
+            icon: Icon(Icons.event),
+            label: 'Events',
           ),
-
-          // Profile Tab
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        CircleAvatar(
-                          radius: 50,
-                          backgroundColor: const Color(0xFF3498db).withValues(alpha:0.1),
-                          child: const Icon(Icons.medical_services, size: 40, color: Color(0xFF3498db)),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          doctorProfile['name'],
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2c3e50),
-                          ),
-                        ),
-                        Text(
-                          doctorProfile['specialization'],
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Color(0xFF3498db),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          doctorProfile['hospital'],
-                          style: const TextStyle(color: Color(0xFF7f8c8d)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Professional Details',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2c3e50),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        _buildProfileDetail('Experience', doctorProfile['experience']),
-                        _buildProfileDetail('Qualification', doctorProfile['qualification']),
-                        _buildProfileDetail('Rating', '${doctorProfile['rating']} ⭐'),
-                        _buildProfileDetail('Patients Treated', doctorProfile['patientsCount'].toString()),
-                        _buildProfileDetail('Contact', doctorProfile['contact']),
-                        _buildProfileDetail('Email', doctorProfile['email']),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'About',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2c3e50),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          doctorProfile['bio'],
-                          style: const TextStyle(color: Color(0xFF7f8c8d), height: 1.5),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: _currentIndex == 0 ? FloatingActionButton(
         onPressed: () {
           // Quick action - Create prescription or start consultation
         },
         backgroundColor: const Color(0xFF3498db),
         child: const Icon(Icons.add, color: Colors.white),
-      ),
+      ) : null,
     );
   }
 }
