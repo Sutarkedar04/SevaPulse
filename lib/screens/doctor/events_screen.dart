@@ -164,7 +164,7 @@ class _EventsScreenState extends State<EventsScreen> {
             itemCount: event['registeredPatients'] ?? 0,
             itemBuilder: (context, index) => ListTile(
               leading: CircleAvatar(
-                backgroundColor: const Color(0xFF3498db).withOpacity(0.1),
+                backgroundColor: const Color(0xFF3498db).withValues(alpha: 0.1),
                 child: const Icon(Icons.person, color: Color(0xFF3498db)),
               ),
               title: Text('Patient ${index + 1}'),
@@ -330,9 +330,9 @@ class _EventsScreenState extends State<EventsScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -398,7 +398,7 @@ class _EventsScreenState extends State<EventsScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFe74c3c).withOpacity(0.1),
+                          color: const Color(0xFFe74c3c).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Text(
@@ -414,7 +414,7 @@ class _EventsScreenState extends State<EventsScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF7f8c8d).withOpacity(0.1),
+                          color: const Color(0xFF7f8c8d).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Text(
@@ -430,7 +430,7 @@ class _EventsScreenState extends State<EventsScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF27ae60).withOpacity(0.1),
+                          color: const Color(0xFF27ae60).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Text(
@@ -446,7 +446,7 @@ class _EventsScreenState extends State<EventsScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF3498db).withOpacity(0.1),
+                        color: const Color(0xFF3498db).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -561,7 +561,7 @@ class _EventsScreenState extends State<EventsScreen> {
           Icon(
             Icons.event,
             size: 80,
-            color: const Color(0xFFbdc3c7).withOpacity(0.5),
+            color: const Color(0xFFbdc3c7).withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           Text(

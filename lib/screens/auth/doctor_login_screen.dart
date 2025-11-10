@@ -236,7 +236,7 @@ class _DoctorLoginScreenState extends State<DoctorLoginScreen> {
               borderRadius: BorderRadius.circular(25),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF27ae60).withOpacity(0.3),
+                  color: const Color(0xFF27ae60).withValues(alpha: 0.3),
                   blurRadius: 15,
                   offset: const Offset(0, 5),
                 ),
@@ -279,13 +279,13 @@ class _DoctorLoginScreenState extends State<DoctorLoginScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFF27ae60).withOpacity(0.1),
+            color: const Color(0xFF27ae60).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFF27ae60).withOpacity(0.3)),
+            border: Border.all(color: const Color(0xFF27ae60).withValues(alpha: 0.3)),
           ),
-          child: Row(
+          child: const Row(
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Icon(Icons.security, size: 14, color: Color(0xFF27ae60)),
               SizedBox(width: 6),
               Text(
@@ -312,7 +312,7 @@ class _DoctorLoginScreenState extends State<DoctorLoginScreen> {
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 5),
               ),
@@ -360,7 +360,7 @@ class _DoctorLoginScreenState extends State<DoctorLoginScreen> {
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 5),
               ),
@@ -476,7 +476,7 @@ class _DoctorLoginScreenState extends State<DoctorLoginScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
           elevation: 5,
-          shadowColor: const Color(0xFF27ae60).withOpacity(0.3),
+          shadowColor: const Color(0xFF27ae60).withValues(alpha: 0.3),
         ),
         child: _isLoggingIn
             ? const Row(

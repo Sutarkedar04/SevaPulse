@@ -34,7 +34,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     CircleAvatar(
                       radius: 50,
-                      backgroundColor: const Color(0xFF3498db).withOpacity(0.1),
+                      backgroundColor: const Color(0xFF3498db).withValues(alpha: 0.1),
                       child: const Icon(Icons.medical_services, size: 40, color: Color(0xFF3498db)),
                     ),
                     const SizedBox(height: 16),

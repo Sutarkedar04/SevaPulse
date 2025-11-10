@@ -356,7 +356,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with WidgetsBinding
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: priorityColor.withOpacity(0.1),
+                        color: priorityColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -372,7 +372,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with WidgetsBinding
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
+                        color: statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -577,7 +577,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with WidgetsBinding
                 children: [
                   CircleAvatar(
                     radius: 30,
-                    backgroundColor: const Color(0xFF3498db).withOpacity(0.1),
+                    backgroundColor: const Color(0xFF3498db).withValues(alpha: 0.1),
                     child: const Icon(Icons.medical_services, color: Color(0xFF3498db), size: 30),
                   ),
                   const SizedBox(width: 16),

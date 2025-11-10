@@ -51,7 +51,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
               children: [
                 CircleAvatar(
                   radius: 30,
-                  backgroundColor: const Color(0xFF3498db).withOpacity(0.1),
+                  backgroundColor: const Color(0xFF3498db).withValues(alpha: 0.1),
                   child: const Icon(Icons.medical_services, color: Color(0xFF3498db)),
                 ),
                 const SizedBox(width: 16),

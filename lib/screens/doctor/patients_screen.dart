@@ -224,9 +224,9 @@ class _PatientsScreenState extends State<PatientsScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -274,12 +274,12 @@ class _PatientsScreenState extends State<PatientsScreen> {
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF3498db).withOpacity(0.1),
+                    color: const Color(0xFF3498db).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.person,
-                    color: const Color(0xFF3498db),
+                    color: Color(0xFF3498db),
                     size: 24,
                   ),
                 ),
@@ -315,7 +315,7 @@ class _PatientsScreenState extends State<PatientsScreen> {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: _getConditionColor(patient['condition']).withOpacity(0.1),
+                              color: _getConditionColor(patient['condition']).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -402,7 +402,7 @@ class _PatientsScreenState extends State<PatientsScreen> {
           Icon(
             Icons.people_outline,
             size: 80,
-            color: const Color(0xFFbdc3c7).withOpacity(0.5),
+            color: const Color(0xFFbdc3c7).withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           const Text(

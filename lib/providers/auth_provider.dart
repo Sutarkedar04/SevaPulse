@@ -83,7 +83,7 @@ class AuthProvider with ChangeNotifier {
       
       // Save user data to shared preferences
       if (_user != null) {
-        final prefs = _prefs ?? await SharedPreferences.getInstance();
+        // final prefs = _prefs ?? await SharedPreferences.getInstance();
         // await prefs.setString('user_data', _user!.toJson());
         // await prefs.setString('user_data', _user!.toJson());
       }
