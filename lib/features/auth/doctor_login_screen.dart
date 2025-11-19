@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
-import '../doctor/doctor_home_screen.dart';
+import '../../../data/providers/auth_provider.dart';
+import '../doctor/screens/doctor_home_screen.dart';
+import 'doctor_register_screen.dart'; // Add this import
 
 class DoctorLoginScreen extends StatefulWidget {
   const DoctorLoginScreen({Key? key}) : super(key: key);
@@ -96,6 +97,15 @@ class _DoctorLoginScreenState extends State<DoctorLoginScreen> {
     }
   }
 
+  void _navigateToRegister() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const DoctorRegisterScreen(),
+      ),
+    );
+  }
+
   void _forgotPassword() {
     showDialog(
       context: context,
@@ -188,6 +198,11 @@ class _DoctorLoginScreenState extends State<DoctorLoginScreen> {
                 
                 // Login Button
                 _buildLoginButton(),
+                
+                const SizedBox(height: 20),
+                
+                // Sign Up Section
+                _buildSignUpSection(),
                 
                 const SizedBox(height: 20),
                 
@@ -518,29 +533,89 @@ class _DoctorLoginScreenState extends State<DoctorLoginScreen> {
     );
   }
 
+  Widget _buildSignUpSection() {
+    return Column(
+      children: [
+        // Divider
+        Row(
+          children: [
+            Expanded(
+              child: Divider(
+                color: Colors.grey[300],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'New Doctor?',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Divider(
+                color: Colors.grey[300],
+              ),
+            ),
+          ],
+        ),
+        
+        const SizedBox(height: 20),
+        
+        // Sign Up Button
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton(
+            onPressed: _navigateToRegister,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF3498db),
+              side: const BorderSide(color: Color(0xFF3498db)),
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.person_add, size: 18),
+                SizedBox(width: 8),
+                Text(
+                  'CREATE DOCTOR ACCOUNT',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildDemoCredentialsButton() {
     return SizedBox(
       width: double.infinity,
-      child: OutlinedButton(
+      child: TextButton(
         onPressed: _showDemoCredentials,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFF3498db),
-          side: const BorderSide(color: Color(0xFF3498db)),
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+        style: TextButton.styleFrom(
+          foregroundColor: const Color(0xFF7f8c8d),
+          padding: const EdgeInsets.symmetric(vertical: 12),
         ),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.info_outline, size: 18),
-            SizedBox(width: 8),
+            Icon(Icons.info_outline, size: 16),
+            SizedBox(width: 6),
             Text(
               'VIEW DEMO CREDENTIALS',
               style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],

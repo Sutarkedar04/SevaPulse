@@ -10,6 +10,7 @@ class User {
   final String? experience; // For doctors
   final String? address;
   final DateTime? dateOfBirth;
+  final String? gender; // Add this field
 
   User({
     required this.id,
@@ -23,6 +24,7 @@ class User {
     this.experience,
     this.address,
     this.dateOfBirth,
+    this.gender, // Add this parameter
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -39,6 +41,7 @@ class User {
       dateOfBirth: json['dateOfBirth'] != null 
           ? DateTime.parse(json['dateOfBirth'])
           : null,
+      gender: json['gender'], // Add this line
       createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
     );
   }
@@ -55,6 +58,7 @@ class User {
       'experience': experience,
       'address': address,
       'dateOfBirth': dateOfBirth?.toIso8601String(),
+      'gender': gender, // Add this line
       'createdAt': createdAt.toIso8601String(),
     };
   }
@@ -71,6 +75,7 @@ class User {
     String? experience,
     String? address,
     DateTime? dateOfBirth,
+    String? gender, // Add this parameter
   }) {
     return User(
       id: id ?? this.id,
@@ -84,6 +89,7 @@ class User {
       experience: experience ?? this.experience,
       address: address ?? this.address,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      gender: gender ?? this.gender, // Add this line
     );
   }
 }

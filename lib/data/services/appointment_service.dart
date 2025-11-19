@@ -83,7 +83,8 @@ class AppointmentService {
       'status': 'pending', // Default status for new appointments
     });
     
-    print('New appointment booked: ${appointment['patientName']} with Dr. ${appointment['doctorName']}');
+    // Consider using a logging framework like dart:developer or a package like logger
+    // developer.log('New appointment booked: ${appointment['patientName']} with Dr. ${appointment['doctorName']}');
   }
 
   void updateAppointmentStatus(int appointmentId, String status) {

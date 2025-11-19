@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../services/appointment_service.dart';
+import '../../../data/providers/auth_provider.dart';
+import '../../../data/services/appointment_service.dart';
 
 class BookAppointmentScreen extends StatefulWidget {
   final Map<String, dynamic> doctor;

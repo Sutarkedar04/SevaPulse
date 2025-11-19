@@ -321,7 +321,7 @@ class _MyMedicineScreenState extends State<MyMedicineScreen> {
 
   Widget _buildScheduleDropdown(String? value, Function setDialogState) {
     return DropdownButtonFormField<String>(
-      value: value,
+      initialValue: value,
       decoration: const InputDecoration(
         labelText: 'Schedule',
         border: OutlineInputBorder(),

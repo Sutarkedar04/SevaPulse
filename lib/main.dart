@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'providers/auth_provider.dart';
-import 'providers/appointment_provider.dart';
-import 'providers/theme_provider.dart';
-import 'screens/auth/intro_screen.dart';
-import 'screens/user/user_home_screen.dart';
-import 'screens/doctor/doctor_home_screen.dart'; // Add this import
+import 'package:seva_pulse/features/auth/SevaPulseSplashScreen.dart';
+import 'data/providers/auth_provider.dart';
+import 'data/providers/appointment_provider.dart';
+import 'data/providers/theme_provider.dart';
+import 'features/user/screens/user_home_screen.dart';
+import 'features/doctor/screens/doctor_home_screen.dart'; // Add this import
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -119,7 +119,7 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
       }
     } else {
       // User is not logged in
-      return const IntroScreen();
+      return const SevaPulseSplashScreen();
     }
   }
 }

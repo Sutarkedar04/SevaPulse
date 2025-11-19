@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'patients_screen.dart';
 import 'events_screen.dart';
 import 'profile_screen.dart';
-import '../auth/user_selection_screen.dart';
-import '../../services/appointment_service.dart';
+import '../../auth/user_selection_screen.dart';
+import '../../../data/services/appointment_service.dart';
 
 class DoctorHomeScreen extends StatefulWidget {
   const DoctorHomeScreen({Key? key}) : super(key: key);
@@ -37,7 +37,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with WidgetsBinding
   ];
 
   Map<String, dynamic> doctorProfile = {
-    'name': 'Dr. Isha Tapekar',
+    'name': 'Dr. Prathamesh shinde',
     'specialization': 'Cardiologist',
     'experience': '12 years',
     'qualification': 'MD, DM Cardiology',

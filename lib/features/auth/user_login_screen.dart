@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../providers/auth_provider.dart';
-import '../../core/widgets/custom_button.dart';
-import '../../core/widgets/custom_textfield.dart';
+import '../../data/providers/auth_provider.dart';
+import '../../shared/widgets/custom_button.dart';
+import '../../shared/widgets/custom_textfield.dart';
 import '../../core/utils/validators.dart';
 import '../../core/utils/helpers.dart';
-import '../user/user_home_screen.dart';
+import '../user/screens/user_home_screen.dart';
 import 'user_register_screen.dart';
 
 class UserLoginScreen extends StatefulWidget {

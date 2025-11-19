@@ -14,14 +14,17 @@ class UserSelectionScreen extends StatelessWidget {
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
-              // Back Button
-              Align(
-                alignment: Alignment.topLeft,
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Color(0xFF2c3e50)),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ),
+              // Back Button - Only show if we can pop
+              if (Navigator.canPop(context))
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Color(0xFF2c3e50)),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                )
+              else
+                const SizedBox(height: 20), // Add some space if no back button
               
               const Spacer(flex: 1),
               

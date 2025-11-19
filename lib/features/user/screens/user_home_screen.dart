@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
+import '../../../data/providers/auth_provider.dart';
 import 'prescriptions_screen.dart';
 import 'contact_us_screen.dart';
 import 'specialties_screen.dart';
 import 'profile_screen.dart';
 import 'my_medicine_screen.dart';
 import 'chatbot_screen.dart';
-import 'canteen_menu_screen.dart'; // Add this import
+import 'canteen_menu_screen.dart';
+import 'health_feed_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({Key? key}) : super(key: key);
@@ -35,8 +36,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> with SingleTickerProvid
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-
-
 
     // Start animation after build
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -340,10 +339,10 @@ class _HomeContentState extends State<HomeContent> with SingleTickerProviderStat
       'icon': Icons.feed,
       'buttonText': 'Explore Feed',
       'onPressed': (BuildContext context) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Health feed loaded!'),
-            backgroundColor: Color(0xFF3498db),
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const HealthFeedScreen(),
           ),
         );
       },
