@@ -1,0 +1,35 @@
+name: seva_pulse
+description: A healthcare app for patients and doctors
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.0.5
+  http: ^1.1.0
+  shared_preferences: ^2.2.2
+  intl: ^0.18.1
+  google_fonts: ^6.3.2
+  flutter_svg: ^2.0.9  # Add this line for SVG support
+  image_picker: ^1.0.4  # Add this line
+  connectivity_plus: ^5.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/userfirstimg.png
+    - assets/images/logo/kstarlogo.png
+    - assets/images/undraw_login_weas.svg
+    - assets/images/undraw_doctor_aum1.svg
