@@ -18,6 +18,9 @@ class _UserRegisterScreenState extends State<UserRegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  
+  // Controllers for date and gender to prevent rebuild issues
+  final TextEditingController _dobController = TextEditingController();
 
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -25,16 +28,36 @@ class _UserRegisterScreenState extends State<UserRegisterScreen> {
   DateTime? _selectedDate;
   String? _selectedGender;
 
+  @override
+  void initState() {
+    super.initState();
+    // Initialize DOB controller
+    _dobController.text = 'Select your date of birth';
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _nameController.dispose();
+    _phoneController.dispose();
+    _dobController.dispose();
+    super.dispose();
+  }
+
   Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)),
+      initialDate: _selectedDate ?? DateTime.now().subtract(const Duration(days: 365 * 18)),
       firstDate: DateTime(1900),
       lastDate: DateTime.now().subtract(const Duration(days: 365 * 5)),
     );
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
+        // Update the controller text to show the selected date
+        _dobController.text = '${picked.day}/${picked.month}/${picked.year}';
       });
     }
   }
@@ -71,27 +94,34 @@ class _UserRegisterScreenState extends State<UserRegisterScreen> {
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Registration successful! Please login.'),
+            content: Text('Registration successful!'),
             backgroundColor: Color(0xFF27ae60),
             duration: Duration(seconds: 2),
           ),
         );
         
-        Navigator.pop(context);
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const UserHomeScreen()),
+          (route) => false,
+        );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(authProvider.error ?? 'Registration failed'),
+            content: Text(authProvider.error ?? 'Registration failed. Please try again.'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
     } catch (e) {
+      print('❌ Registration error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: ${e.toString().replaceFirst('Exception: ', '')}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -102,16 +132,6 @@ class _UserRegisterScreenState extends State<UserRegisterScreen> {
         });
       }
     }
-  }
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    _nameController.dispose();
-    _phoneController.dispose();
-    super.dispose();
   }
 
   @override
@@ -232,8 +252,9 @@ class _UserRegisterScreenState extends State<UserRegisterScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Date of Birth Field
+              // Date of Birth Field - FIXED with controller
               TextFormField(
+                controller: _dobController,
                 readOnly: true,
                 decoration: InputDecoration(
                   labelText: 'Date of Birth (Optional)',
@@ -245,15 +266,13 @@ class _UserRegisterScreenState extends State<UserRegisterScreen> {
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: Color(0xFF3498db)),
                   ),
-                  hintText: _selectedDate == null 
-                      ? 'Select your date of birth' 
-                      : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
+                  hintText: 'Select your date of birth',
                 ),
                 onTap: _selectDate,
               ),
               const SizedBox(height: 20),
 
-              // Gender Field
+              // Gender Field - FIXED with proper value handling
               DropdownButtonFormField<String>(
                 value: _selectedGender,
                 decoration: InputDecoration(
@@ -277,6 +296,10 @@ class _UserRegisterScreenState extends State<UserRegisterScreen> {
                   setState(() {
                     _selectedGender = value;
                   });
+                },
+                validator: (value) {
+                  // No validation needed as it's optional
+                  return null;
                 },
               ),
               const SizedBox(height: 20),

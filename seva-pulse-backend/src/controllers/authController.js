@@ -9,7 +9,7 @@ const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || 'secretkey123', { expiresIn: '7d' });
 };
 
-exports.register = async (req, res) => {
+exports.register = async (req, res, next) => {
   try {
     const { name, email, password, phone, userType, specialization, experience, dateOfBirth, address, gender } = req.body;
     
@@ -97,14 +97,12 @@ exports.register = async (req, res) => {
       });
     }
     
-    res.status(500).json({ 
-      success: false, 
-      message: error.message || 'Registration failed. Please try again.' 
-    });
+    // Pass error to Express error handler
+    next(error);
   }
 };
 
-exports.login = async (req, res) => {
+exports.login = async (req, res, next) => {
   try {
     const { email, password, userType } = req.body;
     
@@ -167,11 +165,11 @@ exports.login = async (req, res) => {
     
   } catch (error) {
     console.error('❌ Login error:', error);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-exports.getMe = async (req, res) => {
+exports.getMe = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -201,10 +199,15 @@ exports.getMe = async (req, res) => {
     });
   } catch (error) {
     console.error('❌ GetMe error:', error);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-exports.logout = async (req, res) => {
-  res.status(200).json({ success: true, message: 'Logged out successfully' });
+exports.logout = async (req, res, next) => {
+  try {
+    res.status(200).json({ success: true, message: 'Logged out successfully' });
+  } catch (error) {
+    console.error('❌ Logout error:', error);
+    next(error);
+  }
 };

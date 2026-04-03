@@ -1,7 +1,7 @@
 const Doctor = require('../models/Doctor');
 const User = require('../models/User');
 
-exports.getDoctors = async (req, res) => {
+exports.getDoctors = async (req, res, next) => {
   try {
     console.log('Fetching doctors for user:', req.user.id);
     
@@ -10,7 +10,6 @@ exports.getDoctors = async (req, res) => {
     
     console.log('Doctors found:', doctors.length);
     
-    // Format the response to match what frontend expects
     const formattedDoctors = doctors.map(doctor => ({
       _id: doctor._id,
       user: doctor.user ? {
@@ -36,11 +35,11 @@ exports.getDoctors = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in getDoctors:', error);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-exports.getDoctor = async (req, res) => {
+exports.getDoctor = async (req, res, next) => {
   try {
     const doctor = await Doctor.findById(req.params.id)
       .populate('user', 'name email phone profilePicture address');
@@ -70,11 +69,11 @@ exports.getDoctor = async (req, res) => {
     res.status(200).json({ success: true, data: formattedDoctor });
   } catch (error) {
     console.error('Error in getDoctor:', error);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-exports.updateDoctor = async (req, res) => {
+exports.updateDoctor = async (req, res, next) => {
   try {
     const doctor = await Doctor.findByIdAndUpdate(
       req.params.id, 
@@ -89,6 +88,6 @@ exports.updateDoctor = async (req, res) => {
     res.status(200).json({ success: true, data: doctor });
   } catch (error) {
     console.error('Error in updateDoctor:', error);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };

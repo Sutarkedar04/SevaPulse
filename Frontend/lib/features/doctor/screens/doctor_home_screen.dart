@@ -23,38 +23,12 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with WidgetsBinding
   bool _isInitialized = false;
   final AppointmentService _appointmentService = AppointmentService();
   List<Map<String, dynamic>> _todayAppointments = [];
+  List<Map<String, dynamic>> _allAppointmentsList = [];
   List<Map<String, dynamic>> _patients = [];
   bool _isLoading = true;
+  bool _isRefreshing = false;
 
   Map<String, dynamic> doctorProfile = {};
-
-  final List<Map<String, dynamic>> medicalEvents = [
-    {
-      'title': 'Free Diabetes Screening Camp',
-      'date': '2025-10-15',
-      'time': '9:00 AM - 4:00 PM',
-      'location': 'Hospital Campus',
-      'registeredPatients': 45,
-    },
-    {
-      'title': 'Heart Health Awareness Workshop',
-      'date': '2025-10-20',
-      'time': '2:00 PM - 5:00 PM',
-      'location': 'Conference Hall',
-      'registeredPatients': 23,
-    },
-  ];
-
-  // Helper to normalize IDs
-  String _normalizeId(String? id) {
-    if (id == null) return '';
-    String normalized = id.trim();
-    if (normalized.startsWith('ObjectId(')) {
-      normalized = normalized.replaceAll('ObjectId(', '').replaceAll(')', '');
-    }
-    normalized = normalized.replaceAll('"', '').replaceAll("'", '');
-    return normalized;
-  }
 
   @override
   void initState() {
@@ -69,8 +43,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with WidgetsBinding
     if (widget.doctorData != null) {
       print('\n📋 Loading doctor data from widget:');
       print('   Name: ${widget.doctorData!.name}');
-      print('   ID: ${widget.doctorData!.id}');
-      print('   Specialization: ${widget.doctorData!.specialization}');
+      print('   User ID: ${widget.doctorData!.id}');
       
       doctorProfile = {
         'name': widget.doctorData!.name,
@@ -89,7 +62,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with WidgetsBinding
       if (authProvider.user != null && authProvider.user!.userType == 'doctor') {
         print('\n📋 Loading doctor data from AuthProvider:');
         print('   Name: ${authProvider.user!.name}');
-        print('   ID: ${authProvider.user!.id}');
+        print('   User ID: ${authProvider.user!.id}');
         
         doctorProfile = {
           'name': authProvider.user!.name,
@@ -173,93 +146,123 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> with WidgetsBinding
     }
   }
 
- // In doctor_home_screen.dart, update _refreshAppointments:
-
-void _refreshAppointments() {
-  try {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final doctorUserId = authProvider.user?.id;
-    
-    print('\n=== 🔍 DOCTOR APPOINTMENT DEBUG ===');
-    print('Doctor User ID from Auth: "$doctorUserId"');
-    print('Doctor Name: ${authProvider.user?.name}');
-    
-    if (doctorUserId == null || doctorUserId.isEmpty) {
-      print('❌ No doctor ID found!');
+  void _refreshAppointments() {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final doctorName = authProvider.user?.name;
+      
+      print('\n=== 🔍 DOCTOR APPOINTMENT DEBUG ===');
+      print('Doctor Name: ${authProvider.user?.name}');
+      
+      if (doctorName == null || doctorName.isEmpty) {
+        print('❌ No doctor name found!');
+        _todayAppointments = [];
+        if (mounted) setState(() {});
+        return;
+      }
+      
+      // Get all appointments
+      final allAppointments = _appointmentService.getAllAppointments();
+      print('Total appointments in system: ${allAppointments.length}');
+      
+      // Filter out cancelled appointments
+      final activeAppointments = allAppointments.where((apt) {
+        return apt.status.toLowerCase() != 'cancelled';
+      }).toList();
+      
+      print('Active appointments (excluding cancelled): ${activeAppointments.length}');
+      
+      // Filter by doctor name
+      final doctorAppointments = activeAppointments.where((apt) {
+        return apt.doctorName.toLowerCase() == doctorName.toLowerCase();
+      }).toList();
+      
+      print('\n📊 Appointments for Dr. $doctorName: ${doctorAppointments.length}');
+      for (var apt in doctorAppointments) {
+        print('   - ${apt.patientName} at ${apt.time} on ${apt.date.toLocal()} (${apt.status})');
+      }
+      
+      // Store all appointments for the doctor
+      _allAppointmentsList = doctorAppointments.map((apt) => ({
+        'id': apt.id,
+        'patientId': apt.patientId,
+        'patientName': apt.patientName,
+        'patientEmail': apt.patientEmail,
+        'date': apt.date,
+        'time': apt.time,
+        'status': apt.status,
+        'type': apt.type,
+        'symptoms': apt.symptoms,
+      })).toList();
+      
+      // Get today's date
+      final now = DateTime.now();
+      final todayDate = DateTime(now.year, now.month, now.day);
+      
+      // Filter today's appointments (excluding cancelled)
+      final todayAppointments = doctorAppointments.where((apt) {
+        final localDate = apt.date.toLocal();
+        final aptDate = DateTime(localDate.year, localDate.month, localDate.day);
+        return aptDate.isAtSameMomentAs(todayDate);
+      }).toList();
+      
+      print('\n📅 Today\'s appointments: ${todayAppointments.length}');
+      for (var apt in todayAppointments) {
+        print('   - ${apt.patientName} at ${apt.time} (${apt.status})');
+      }
+      
+      // Convert to map format
+      _todayAppointments = todayAppointments.map((apt) => ({
+        'id': apt.id,
+        'patientId': apt.patientId,
+        'name': apt.patientName,
+        'patientName': apt.patientName,
+        'email': apt.patientEmail,
+        'patientEmail': apt.patientEmail,
+        'date': apt.date.toLocal().toIso8601String().split('T')[0],
+        'time': apt.time,
+        'status': apt.status,
+        'type': apt.type,
+        'symptoms': apt.symptoms,
+        'priority': apt.status == 'confirmed' ? 'normal' : 'normal',
+      })).toList();
+      
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      print('❌ Error refreshing appointments: $e');
       _todayAppointments = [];
-      if (mounted) setState(() {});
-      return;
-    }
-    
-    // Get all appointments
-    final allAppointments = _appointmentService.getAllAppointments();
-    print('Total appointments in system: ${allAppointments.length}');
-    
-    // Debug: Print all appointments
-    for (var apt in allAppointments) {
-      print('   Appointment: ${apt.id}');
-      print('      Doctor ID in appointment: "${apt.doctorId}"');
-      print('      Doctor Name: ${apt.doctorName}');
-      print('      Patient: ${apt.patientName}');
-      print('      Date: ${apt.date}');
-      print('      Time: ${apt.time}');
-    }
-    
-    // Filter appointments where doctor ID matches the logged-in user's ID
-    final doctorAppointments = allAppointments.where((apt) {
-      return apt.doctorId == doctorUserId;
-    }).toList();
-    
-    print('Appointments for this doctor: ${doctorAppointments.length}');
-    
-    // Get today's date
-    final now = DateTime.now();
-    final todayDate = DateTime(now.year, now.month, now.day);
-    
-    // Filter today's appointments
-    final todayAppointments = doctorAppointments.where((apt) {
-      final aptDate = DateTime(apt.date.year, apt.date.month, apt.date.day);
-      return aptDate.isAtSameMomentAs(todayDate);
-    }).toList();
-    
-    print('Today\'s appointments: ${todayAppointments.length}');
-    
-    // Convert to map format
-    _todayAppointments = todayAppointments.map((apt) => {
-      'id': apt.id,
-      'patientId': apt.patientId,
-      'name': apt.patientName,
-      'patientName': apt.patientName,
-      'email': apt.patientEmail,
-      'patientEmail': apt.patientEmail,
-      'date': apt.date.toIso8601String().split('T')[0],
-      'time': apt.time,
-      'status': apt.status,
-      'type': apt.type,
-      'symptoms': apt.symptoms,
-      'priority': apt.status == 'confirmed' ? 'normal' : 'normal',
-    }).toList();
-    
-    if (mounted) {
-      setState(() {});
-    }
-  } catch (e) {
-    print('❌ Error refreshing appointments: $e');
-    _todayAppointments = [];
-    if (mounted) {
-      setState(() {});
+      if (mounted) {
+        setState(() {});
+      }
     }
   }
-}
 
   void _refreshPatients() {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final doctorId = authProvider.user?.id;
+      final doctorName = authProvider.user?.name;
       
-      if (doctorId != null && doctorId.isNotEmpty) {
-        final patients = _appointmentService.getAllPatientsForDoctor(doctorId);
-        _patients = List<Map<String, dynamic>>.from(patients);
+      if (doctorName != null && doctorName.isNotEmpty) {
+        // Get unique patients from all appointments
+        final patientMap = <String, Map<String, dynamic>>{};
+        
+        for (final apt in _allAppointmentsList) {
+          final patientId = apt['patientId']?.toString() ?? '';
+          if (patientId.isNotEmpty && !patientMap.containsKey(patientId)) {
+            patientMap[patientId] = {
+              'id': patientId,
+              'name': apt['patientName'] ?? 'Unknown',
+              'email': apt['patientEmail'] ?? 'N/A',
+              'lastVisit': apt['date']?.toLocal().toIso8601String() ?? DateTime.now().toIso8601String(),
+              'condition': apt['symptoms'] ?? 'General',
+              'emergencyContact': false,
+            };
+          }
+        }
+        
+        _patients = patientMap.values.toList();
         doctorProfile['patientsCount'] = _patients.length;
         print('\n📋 Found ${_patients.length} patients for Dr. ${doctorProfile['name']}');
       }
@@ -276,13 +279,42 @@ void _refreshAppointments() {
     }
   }
 
+  Future<void> _refreshData() async {
+    if (_isRefreshing) return;
+    
+    setState(() {
+      _isRefreshing = true;
+    });
+    
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+      
+      if (token != null && token.isNotEmpty) {
+        print('\n🔄 Refreshing doctor data...');
+        _appointmentService.setToken(token);
+        await _appointmentService.getAppointments();
+        _refreshAppointments();
+        _refreshPatients();
+        print('✅ Doctor data refreshed successfully');
+      }
+    } catch (e) {
+      print('❌ Error refreshing data: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+        });
+      }
+    }
+  }
+
   void _resetToDashboard() {
     if (mounted) {
       setState(() {
         _currentIndex = 0;
       });
-      _refreshAppointments();
-      _refreshPatients();
+      _refreshData();
     }
   }
 
@@ -392,80 +424,98 @@ void _refreshAppointments() {
     );
   }
 
-  void _showEventCreationDialog() {
-    showDialog(
+  Future<void> _cancelAppointment(Map<String, dynamic> appointment) async {
+    // Show confirmation dialog
+    final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Create Medical Event'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: 'Event Title',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: 'Date',
-                  border: OutlineInputBorder(),
-                ),
-                readOnly: true,
-                onTap: () {},
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: 'Time',
-                  border: OutlineInputBorder(),
-                ),
-                readOnly: true,
-                onTap: () {},
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: 'Location',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-            ],
-          ),
+        title: const Text('Cancel Appointment'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Are you sure you want to cancel the appointment with:'),
+            const SizedBox(height: 8),
+            Text(
+              appointment['name'] ?? appointment['patientName'] ?? 'Patient',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            Text('Time: ${appointment['time']}'),
+            Text('Date: ${appointment['date']}'),
+            const SizedBox(height: 8),
+            const Text(
+              'This action cannot be undone.',
+              style: TextStyle(color: Colors.red, fontSize: 12),
+            ),
+          ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('No, Keep It'),
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Event created and notifications sent to patients'),
-                  backgroundColor: Color(0xFF27ae60),
-                ),
-              );
-            },
+            onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF27ae60),
+              backgroundColor: Colors.red,
             ),
-            child: const Text('Create Event'),
+            child: const Text('Yes, Cancel'),
           ),
         ],
       ),
     );
+    
+    if (confirm != true) return;
+    
+    // Show loading
+    final snackBar = SnackBar(
+      content: Row(
+        children: [
+          const SizedBox(
+            height: 20,
+            width: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text('Cancelling appointment with ${appointment['name'] ?? appointment['patientName'] ?? 'Patient'}...'),
+        ],
+      ),
+      backgroundColor: Colors.orange,
+      duration: const Duration(seconds: 5),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    
+    try {
+      await _appointmentService.cancelAppointment(appointment['id']?.toString() ?? '');
+      
+      // Refresh the data to remove the cancelled appointment
+      await _refreshData();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Appointment with ${appointment['name'] ?? appointment['patientName'] ?? 'Patient'} cancelled successfully'),
+            backgroundColor: const Color(0xFF27ae60),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error cancelling appointment: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildDashboardTab() {
@@ -482,121 +532,141 @@ void _refreshAppointments() {
       );
     }
     
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 150,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              image: const DecorationImage(
-                image: AssetImage('assets/images/userfirstimg.png'),
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundColor: const Color(0xFF3498db).withOpacity(0.1),
-                    child: const Icon(Icons.medical_services, color: Color(0xFF3498db), size: 30),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Welcome, ${doctorProfile['name'] ?? 'Doctor'}',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2c3e50),
-                          ),
-                        ),
-                        Text(
-                          doctorProfile['specialization'] ?? 'Specialist',
-                          style: const TextStyle(color: Color(0xFF7f8c8d)),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${_todayAppointments.length} appointments today',
-                          style: const TextStyle(
-                            color: Color(0xFF3498db),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                "Today's Appointments",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2c3e50),
+    return RefreshIndicator(
+      onRefresh: _refreshData,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 150,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                image: const DecorationImage(
+                  image: AssetImage('assets/images/userfirstimg.png'),
+                  fit: BoxFit.cover,
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.refresh, color: Color(0xFF3498db)),
-                onPressed: _refreshAppointments,
-                tooltip: 'Refresh Appointments',
+            ),
+            const SizedBox(height: 20),
+
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          
-          if (_todayAppointments.isEmpty)
-            const Card(
               child: Padding(
-                padding: EdgeInsets.all(32.0),
-                child: Column(
+                padding: const EdgeInsets.all(16),
+                child: Row(
                   children: [
-                    Icon(Icons.event_available, size: 64, color: Color(0xFFbdc3c7)),
-                    SizedBox(height: 16),
-                    Text(
-                      'No appointments for today',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF7f8c8d),
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundColor: const Color(0xFF3498db).withOpacity(0.1),
+                      child: const Icon(Icons.medical_services, color: Color(0xFF3498db), size: 30),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Welcome, ${doctorProfile['name'] ?? 'Doctor'}',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF2c3e50),
+                            ),
+                          ),
+                          Text(
+                            doctorProfile['specialization'] ?? 'Specialist',
+                            style: const TextStyle(color: Color(0xFF7f8c8d)),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${_todayAppointments.length} appointment${_todayAppointments.length != 1 ? 's' : ''} today',
+                            style: const TextStyle(
+                              color: Color(0xFF3498db),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Appointments booked by patients will appear here',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Color(0xFF95a5a6),
-                      ),
+                    IconButton(
+                      icon: _isRefreshing
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3498db)),
+                              ),
+                            )
+                          : const Icon(Icons.refresh, color: Color(0xFF3498db)),
+                      onPressed: _isRefreshing ? null : _refreshData,
+                      tooltip: 'Refresh Appointments',
                     ),
                   ],
                 ),
               ),
-            )
-          else
-            ..._todayAppointments.map((appointment) => _buildAppointmentCard(appointment)),
-        ],
+            ),
+            const SizedBox(height: 20),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Today's Appointments",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2c3e50),
+                  ),
+                ),
+                Text(
+                  '${_todayAppointments.length} total',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF7f8c8d),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            
+            if (_todayAppointments.isEmpty)
+              const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Column(
+                    children: [
+                      Icon(Icons.event_available, size: 64, color: Color(0xFFbdc3c7)),
+                      SizedBox(height: 16),
+                      Text(
+                        'No appointments for today',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF7f8c8d),
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Appointments booked by patients will appear here',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Color(0xFF95a5a6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              ..._todayAppointments.map((appointment) => _buildAppointmentCard(appointment)),
+          ],
+        ),
       ),
     );
   }
@@ -642,7 +712,7 @@ void _refreshAppointments() {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'ID: ${appointment['id'] ?? appointment['patientId'] ?? 'N/A'}',
+                        'ID: ${appointment['patientId'] ?? 'N/A'}',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Color(0xFF7f8c8d),
@@ -713,18 +783,31 @@ void _refreshAppointments() {
                 if (status == 'pending') ...[
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {
-                        _appointmentService.updateAppointmentStatus(
-                          appointment['id']?.toString() ?? appointment['patientId']?.toString() ?? '',
-                          'confirmed'
-                        );
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Appointment with ${appointment['name'] ?? appointment['patientName'] ?? 'Patient'} confirmed'),
-                            backgroundColor: const Color(0xFF27ae60),
-                          ),
-                        );
-                        _refreshAppointments();
+                      onPressed: () async {
+                        try {
+                          await _appointmentService.updateAppointmentStatusAPI(
+                            appointment['id']?.toString() ?? '',
+                            'confirmed'
+                          );
+                          await _refreshData();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Appointment with ${appointment['name'] ?? appointment['patientName'] ?? 'Patient'} confirmed'),
+                                backgroundColor: const Color(0xFF27ae60),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error confirming appointment: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
                       },
                       style: OutlinedButton.styleFrom(
                         shape: RoundedRectangleBorder(
@@ -737,19 +820,7 @@ void _refreshAppointments() {
                   const SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {
-                        _appointmentService.updateAppointmentStatus(
-                          appointment['id']?.toString() ?? appointment['patientId']?.toString() ?? '',
-                          'cancelled'
-                        );
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Appointment with ${appointment['name'] ?? appointment['patientName'] ?? 'Patient'} cancelled'),
-                            backgroundColor: const Color(0xFFe74c3c),
-                          ),
-                        );
-                        _refreshAppointments();
-                      },
+                      onPressed: () => _cancelAppointment(appointment),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFFe74c3c),
                         shape: RoundedRectangleBorder(
@@ -870,10 +941,8 @@ void _refreshAppointments() {
           onPrescriptionPressed: _showPrescriptionDialog,
         );
       case 2:
-        return EventsScreen(
-          medicalEvents: medicalEvents,
-          onCreateEventPressed: _showEventCreationDialog,
-        );
+        // EventsScreen now handles its own data fetching
+        return const EventsScreen();
       case 3:
         return ProfileScreen(
           doctorProfile: doctorProfile,
@@ -911,6 +980,7 @@ void _refreshAppointments() {
             },
           ),
           PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
             itemBuilder: (context) => [
               const PopupMenuItem<String>(
                 value: 'profile',

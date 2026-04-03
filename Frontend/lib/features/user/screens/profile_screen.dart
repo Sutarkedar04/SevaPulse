@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/services/patient_service.dart';
+import '../../../core/constants/api_constants.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -12,6 +15,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = true;
+  bool _isSaving = false;
   Map<String, dynamic> _userProfile = {
     'personalInfo': {
       'name': '',
@@ -55,7 +59,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
         
         // Fetch patient details from backend
-        final patientDetails = await _patientService.getPatientProfile();
+        final patientDetails = await _getPatientDetails(authProvider.token);
         
         setState(() {
           _userProfile = {
@@ -63,10 +67,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               'name': user.name,
               'email': user.email,
               'phone': user.phone,
-              'dateOfBirth': patientDetails['dateOfBirth'] ?? 'Not set',
-              'gender': patientDetails['gender'] ?? 'Not set',
+              'dateOfBirth': patientDetails['dateOfBirth'] ?? user.dateOfBirth?.toString().split('T')[0] ?? 'Not set',
+              'gender': patientDetails['gender'] ?? user.gender ?? 'Not set',
               'bloodType': patientDetails['bloodGroup'] ?? 'Not set',
-              'address': patientDetails['address']?['city'] ?? 'Not set',
+              'address': patientDetails['address']?['city'] ?? user.address ?? 'Not set',
             },
             'medicalInfo': {
               'allergies': patientDetails['allergies']?.isNotEmpty == true 
@@ -78,7 +82,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               'currentMedications': patientDetails['currentMedications']?.isNotEmpty == true
                   ? patientDetails['currentMedications'].map((m) => '${m['name']} ${m['dosage']}').join(', ')
                   : 'No medications recorded',
-              'surgeries': 'No surgeries recorded', // This would come from medicalHistory with type 'surgery'
+              'surgeries': 'No surgeries recorded',
               'familyHistory': 'No family history recorded',
             },
           };
@@ -97,20 +101,138 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _updateProfile(Map<String, dynamic> newProfile) async {
-    setState(() {
-      _userProfile = newProfile;
-    });
+  Future<Map<String, dynamic>> _getPatientDetails(String? token) async {
+    if (token == null) return {};
     
-    // Here you would call API to update profile
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Profile updated successfully!'),
-        backgroundColor: Colors.green,
-      ),
-    );
+    try {
+      final response = await http.get(
+        Uri.parse(ApiConstants.patients),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] && data['data'] != null && data['data'].isNotEmpty) {
+          return data['data'][0];
+        }
+      }
+      return {};
+    } catch (e) {
+      print('Error fetching patient details: $e');
+      return {};
+    }
   }
 
+  // In _ProfileScreenState class
+
+Future<void> _updateProfile(Map<String, dynamic> newProfile) async {
+  setState(() {
+    _isSaving = true;
+  });
+  
+  try {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final token = authProvider.token;
+    
+    if (token == null) {
+      throw Exception('Not authenticated');
+    }
+    
+    print('🔄 Updating profile with token: $token');
+    
+    _patientService.setToken(token);
+    
+    // Prepare update data - ONLY send fields that have changed
+    final updateData = <String, dynamic>{};
+    
+    // Personal info
+    if (newProfile['personalInfo']['name'] != _userProfile['personalInfo']['name']) {
+      updateData['name'] = newProfile['personalInfo']['name'];
+    }
+    if (newProfile['personalInfo']['email'] != _userProfile['personalInfo']['email']) {
+      updateData['email'] = newProfile['personalInfo']['email'];
+    }
+    if (newProfile['personalInfo']['phone'] != _userProfile['personalInfo']['phone']) {
+      updateData['phone'] = newProfile['personalInfo']['phone'];
+    }
+    if (newProfile['personalInfo']['dateOfBirth'] != _userProfile['personalInfo']['dateOfBirth'] &&
+        newProfile['personalInfo']['dateOfBirth'] != 'Not set') {
+      updateData['dateOfBirth'] = newProfile['personalInfo']['dateOfBirth'];
+    }
+    if (newProfile['personalInfo']['gender'] != _userProfile['personalInfo']['gender'] &&
+        newProfile['personalInfo']['gender'] != 'Not set') {
+      updateData['gender'] = newProfile['personalInfo']['gender'];
+    }
+    if (newProfile['personalInfo']['bloodType'] != _userProfile['personalInfo']['bloodType'] &&
+        newProfile['personalInfo']['bloodType'] != 'Not set') {
+      updateData['bloodGroup'] = newProfile['personalInfo']['bloodType'];
+    }
+    if (newProfile['personalInfo']['address'] != _userProfile['personalInfo']['address'] &&
+        newProfile['personalInfo']['address'] != 'Not set') {
+      updateData['address'] = {'city': newProfile['personalInfo']['address']};
+    }
+    
+    // Medical info
+    if (newProfile['medicalInfo']['allergies'] != _userProfile['medicalInfo']['allergies'] &&
+        newProfile['medicalInfo']['allergies'] != 'No allergies recorded') {
+      updateData['allergies'] = newProfile['medicalInfo']['allergies']
+          .split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
+    }
+    
+    print('📤 Sending update data: $updateData');
+    
+    if (updateData.isNotEmpty) {
+      await _patientService.updatePatientProfile(updateData);
+      
+      // Update local profile
+      setState(() {
+        _userProfile = newProfile;
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile updated successfully!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No changes to update'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
+  } catch (e) {
+    print('❌ Error updating profile: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error updating profile: ${e.toString().replaceFirst('Exception: ', '')}'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  } finally {
+    if (mounted) {
+      setState(() {
+        _isSaving = false;
+      });
+    }
+  }
+}
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
@@ -137,8 +259,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () {
+            icon: _isSaving 
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Icon(Icons.edit),
+            onPressed: _isSaving ? null : () {
               _showEditProfileDialog(context, authProvider);
             },
           ),
@@ -469,6 +600,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
+// EditProfileDialog remains the same as before
 class EditProfileDialog extends StatefulWidget {
   final AuthProvider authProvider;
   final Map<String, dynamic> currentProfile;
@@ -509,16 +641,16 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
     _nameController = TextEditingController(text: personalInfo['name'] ?? '');
     _emailController = TextEditingController(text: personalInfo['email'] ?? '');
     _phoneController = TextEditingController(text: personalInfo['phone'] ?? '');
-    _dobController = TextEditingController(text: personalInfo['dateOfBirth'] ?? '');
-    _genderController = TextEditingController(text: personalInfo['gender'] ?? '');
-    _bloodTypeController = TextEditingController(text: personalInfo['bloodType'] ?? '');
-    _addressController = TextEditingController(text: personalInfo['address'] ?? '');
+    _dobController = TextEditingController(text: personalInfo['dateOfBirth'] != 'Not set' ? personalInfo['dateOfBirth'] : '');
+    _genderController = TextEditingController(text: personalInfo['gender'] != 'Not set' ? personalInfo['gender'] : '');
+    _bloodTypeController = TextEditingController(text: personalInfo['bloodType'] != 'Not set' ? personalInfo['bloodType'] : '');
+    _addressController = TextEditingController(text: personalInfo['address'] != 'Not set' ? personalInfo['address'] : '');
     
-    _allergiesController = TextEditingController(text: medicalInfo['allergies'] ?? '');
-    _conditionsController = TextEditingController(text: medicalInfo['medicalConditions'] ?? '');
-    _medicationsController = TextEditingController(text: medicalInfo['currentMedications'] ?? '');
-    _surgeriesController = TextEditingController(text: medicalInfo['surgeries'] ?? '');
-    _familyHistoryController = TextEditingController(text: medicalInfo['familyHistory'] ?? '');
+    _allergiesController = TextEditingController(text: medicalInfo['allergies'] != 'No allergies recorded' ? medicalInfo['allergies'] : '');
+    _conditionsController = TextEditingController(text: medicalInfo['medicalConditions'] != 'No conditions recorded' ? medicalInfo['medicalConditions'] : '');
+    _medicationsController = TextEditingController(text: medicalInfo['currentMedications'] != 'No medications recorded' ? medicalInfo['currentMedications'] : '');
+    _surgeriesController = TextEditingController(text: medicalInfo['surgeries'] != 'No surgeries recorded' ? medicalInfo['surgeries'] : '');
+    _familyHistoryController = TextEditingController(text: medicalInfo['familyHistory'] != 'No family history recorded' ? medicalInfo['familyHistory'] : '');
   }
 
   @override
@@ -545,17 +677,17 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
           'name': _nameController.text,
           'email': _emailController.text,
           'phone': _phoneController.text,
-          'dateOfBirth': _dobController.text,
-          'gender': _genderController.text,
-          'bloodType': _bloodTypeController.text,
-          'address': _addressController.text,
+          'dateOfBirth': _dobController.text.isEmpty ? 'Not set' : _dobController.text,
+          'gender': _genderController.text.isEmpty ? 'Not set' : _genderController.text,
+          'bloodType': _bloodTypeController.text.isEmpty ? 'Not set' : _bloodTypeController.text,
+          'address': _addressController.text.isEmpty ? 'Not set' : _addressController.text,
         },
         'medicalInfo': {
-          'allergies': _allergiesController.text,
-          'medicalConditions': _conditionsController.text,
-          'currentMedications': _medicationsController.text,
-          'surgeries': _surgeriesController.text,
-          'familyHistory': _familyHistoryController.text,
+          'allergies': _allergiesController.text.isEmpty ? 'No allergies recorded' : _allergiesController.text,
+          'medicalConditions': _conditionsController.text.isEmpty ? 'No conditions recorded' : _conditionsController.text,
+          'currentMedications': _medicationsController.text.isEmpty ? 'No medications recorded' : _medicationsController.text,
+          'surgeries': _surgeriesController.text.isEmpty ? 'No surgeries recorded' : _surgeriesController.text,
+          'familyHistory': _familyHistoryController.text.isEmpty ? 'No family history recorded' : _familyHistoryController.text,
         },
       };
 
@@ -606,7 +738,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                       _buildTextField('Full Name', _nameController),
                       _buildTextField('Email', _emailController),
                       _buildTextField('Phone', _phoneController),
-                      _buildTextField('Date of Birth', _dobController),
+                      _buildTextField('Date of Birth (YYYY-MM-DD)', _dobController),
                       _buildTextField('Gender', _genderController),
                       _buildTextField('Blood Type', _bloodTypeController),
                       _buildTextField('Address', _addressController, maxLines: 2),
@@ -620,7 +752,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      _buildTextField('Allergies', _allergiesController),
+                      _buildTextField('Allergies (comma separated)', _allergiesController),
                       _buildTextField('Medical Conditions', _conditionsController),
                       _buildTextField('Current Medications', _medicationsController),
                       _buildTextField('Surgeries', _surgeriesController),
@@ -672,8 +804,13 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         ),
         validator: (value) {
-          if (value == null || value.isEmpty) {
+          if (label.contains('Name') && (value == null || value.isEmpty)) {
             return 'Please enter $label';
+          }
+          if (label.contains('Email') && value != null && value.isNotEmpty) {
+            if (!value.contains('@')) {
+              return 'Please enter a valid email';
+            }
           }
           return null;
         },

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/medicine_provider.dart';
 
@@ -10,7 +11,7 @@ class MyMedicineScreen extends StatefulWidget {
   State<MyMedicineScreen> createState() => _MyMedicineScreenState();
 }
 
-class _MyMedicineScreenState extends State<MyMedicineScreen> {
+class _MyMedicineScreenState extends State<MyMedicineScreen> with SingleTickerProviderStateMixin {
   // Controllers
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _dosageController = TextEditingController();
@@ -29,9 +30,20 @@ class _MyMedicineScreenState extends State<MyMedicineScreen> {
     'Custom'
   ];
 
+  // Track selected medicine for streak view
+  
+  // Animation controllers - Initialize properly
+  late AnimationController _streakAnimationController;
+
   @override
   void initState() {
     super.initState();
+    // Initialize animation controllers
+    _streakAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final medicineProvider = Provider.of<MedicineProvider>(context, listen: false);
@@ -41,6 +53,12 @@ class _MyMedicineScreenState extends State<MyMedicineScreen> {
         medicineProvider.loadMedicines();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _streakAnimationController.dispose();
+    super.dispose();
   }
 
   // Get stats
@@ -59,7 +77,291 @@ class _MyMedicineScreenState extends State<MyMedicineScreen> {
       'total': totalDoses,
       'completed': completedDoses,
       'pending': totalDoses - completedDoses,
+      'streak': _calculateStreak(medicines),
     };
+  }
+
+  int _calculateStreak(List<Map<String, dynamic>> medicines) {
+    // Simplified streak calculation based on today's doses
+    int completedToday = 0;
+    int totalToday = 0;
+    
+    for (var medicine in medicines) {
+      final times = medicine['times'] as List? ?? [];
+      final taken = medicine['taken'] as List? ?? [];
+      totalToday += times.length;
+      completedToday += taken.where((t) => t == true).length;
+    }
+    
+    // If all doses taken today, streak continues
+    if (totalToday > 0 && completedToday == totalToday) {
+      return 1; // Return 1 for today's streak
+    }
+    return 0;
+  }
+
+  void _showStreakDetails(Map<String, dynamic> medicine) async {
+    setState(() {
+    });
+    _streakAnimationController.forward();
+    
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          return Container(
+            height: MediaQuery.of(context).size.height * 0.7,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              children: [
+                // Handle
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Medicine Info
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      Text(
+                        medicine['name'] ?? 'Medicine',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2c3e50),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${medicine['dosage']} • ${medicine['schedule']}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF7f8c8d),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // Streak Counter
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF3498db), Color(0xFF2ecc71)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    children: [
+                      const Icon(
+                        Icons.local_fire_department,
+                        color: Colors.white,
+                        size: 40,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        '${_calculateMedicineStreak(medicine)} Day Streak!',
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Keep taking your medicine daily',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // Monthly Calendar View
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'March 2026',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2c3e50),
+                        ),
+                      ),
+                      Text(
+                        'Streak Tracker',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF7f8c8d),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 12),
+                
+                // Calendar Grid
+                Expanded(
+                  child: _buildMonthlyCalendar(medicine),
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // Close Button
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3498db),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Close', style: TextStyle(fontSize: 16)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    ).whenComplete(() {
+      _streakAnimationController.reset();
+      setState(() {
+      });
+    });
+  }
+
+  int _calculateMedicineStreak(Map<String, dynamic> medicine) {
+    final taken = medicine['taken'] as List? ?? [];
+    
+    if (taken.isEmpty) return 0;
+    
+    // Count consecutive completed doses
+    int streak = 0;
+    for (int i = taken.length - 1; i >= 0; i--) {
+      if (taken[i] == true) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    
+    return streak;
+  }
+
+  Widget _buildMonthlyCalendar(Map<String, dynamic> medicine) {
+    final now = DateTime.now();
+    final firstDay = DateTime(now.year, now.month, 1);
+    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+    final firstWeekday = firstDay.weekday;
+    
+    // Sample taken dates based on medicine's taken status
+    final takenDates = _getTakenDatesForMedicine(medicine);
+    
+    return GridView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 7,
+        childAspectRatio: 1.2,
+        crossAxisSpacing: 4,
+        mainAxisSpacing: 4,
+      ),
+      itemCount: 35, // 5 rows x 7 days
+      itemBuilder: (context, index) {
+        final day = index - firstWeekday + 2;
+        if (day < 1 || day > daysInMonth) {
+          return const SizedBox.shrink();
+        }
+        
+        final date = DateTime(now.year, now.month, day);
+        final isTaken = takenDates.contains(date);
+        final isToday = date.day == now.day && date.month == now.month;
+        
+        return Container(
+          decoration: BoxDecoration(
+            color: isTaken 
+                ? const Color(0xFF27ae60).withOpacity(0.2)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: isToday ? Border.all(color: const Color(0xFF3498db), width: 2) : null,
+          ),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  day.toString(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isTaken ? FontWeight.bold : FontWeight.normal,
+                    color: isTaken ? const Color(0xFF27ae60) : const Color(0xFF2c3e50),
+                  ),
+                ),
+                if (isTaken)
+                  const Icon(
+                    Icons.check_circle,
+                    size: 12,
+                    color: Color(0xFF27ae60),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  List<DateTime> _getTakenDatesForMedicine(Map<String, dynamic> medicine) {
+    final taken = medicine['taken'] as List? ?? [];
+    final now = DateTime.now();
+    final dates = <DateTime>[];
+    
+    // If all doses taken, show today as taken
+    if (taken.isNotEmpty && taken.every((t) => t == true)) {
+      dates.add(now);
+    }
+    
+    // Add some sample past dates for demonstration
+    for (int i = 1; i <= 3; i++) {
+      if (taken.isNotEmpty && taken.length >= i) {
+        dates.add(now.subtract(Duration(days: i)));
+      }
+    }
+    
+    return dates;
   }
 
   String _formatTimeOfDay(TimeOfDay tod) {
@@ -107,7 +409,7 @@ class _MyMedicineScreenState extends State<MyMedicineScreen> {
       lastDate: DateTime(2100),
     );
     if (picked != null) {
-      controller.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      controller.text = DateFormat('yyyy-MM-dd').format(picked);
     }
   }
 
@@ -440,37 +742,65 @@ class _MyMedicineScreenState extends State<MyMedicineScreen> {
           
           return Column(
             children: [
-              // Header
+              // Header with Add Button on Top
               Container(
-                padding: const EdgeInsets.all(16),
-                color: const Color(0xFF3498db),
-                child: const Row(
+                padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF3498db), Color(0xFF2980b9)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Column(
                   children: [
-                    Icon(Icons.medical_services, color: Colors.white, size: 24),
-                    SizedBox(width: 12),
-                    Text(
-                      'My Medicine Tracker',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.medical_services, color: Colors.white, size: 28),
+                            SizedBox(width: 12),
+                            Text(
+                              'My Medicine',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.add, color: Colors.white, size: 28),
+                            onPressed: _addMedicine,
+                            tooltip: 'Add Medicine',
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Stats Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildStatItem('Total Doses', stats['total'].toString(), Icons.medication, Colors.white),
+                        _buildStatItem('Completed', stats['completed'].toString(), Icons.check_circle, Colors.white),
+                        _buildStatItem('Pending', stats['pending'].toString(), Icons.schedule, Colors.white),
+                        _buildStatItem('Streak', stats['streak'].toString(), Icons.local_fire_department, Colors.white),
+                      ],
                     ),
                   ],
                 ),
               ),
 
-              // Stats
-              Container(
-                padding: const EdgeInsets.all(16),
-                color: const Color(0xFFf8f9fa),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildStatItem('Total Doses', stats['total'].toString(), Icons.medication),
-                    _buildStatItem('Completed', stats['completed'].toString(), Icons.check_circle),
-                    _buildStatItem('Pending', stats['pending'].toString(), Icons.schedule),
-                  ],
-                ),
-              ),
-
-              // Medicine List or Empty State with Centered Button
+              // Medicine List or Empty State
               Expanded(
                 child: medicineProvider.isLoading
                     ? const Center(child: CircularProgressIndicator())
@@ -487,26 +817,8 @@ class _MyMedicineScreenState extends State<MyMedicineScreen> {
                                 ),
                                 const SizedBox(height: 12),
                                 const Text(
-                                  'Start tracking your medications',
+                                  'Tap the + button to add your first medicine',
                                   style: TextStyle(fontSize: 14, color: Color(0xFF95a5a6)),
-                                ),
-                                const SizedBox(height: 30),
-                                ElevatedButton.icon(
-                                  onPressed: _addMedicine,
-                                  icon: const Icon(Icons.add, size: 20),
-                                  label: const Text(
-                                    'Add Your First Medicine',
-                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF3498db),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    elevation: 2,
-                                  ),
                                 ),
                               ],
                             ),
@@ -524,32 +836,29 @@ class _MyMedicineScreenState extends State<MyMedicineScreen> {
           );
         },
       ),
-      floatingActionButton: Consumer<MedicineProvider>(
-        builder: (context, medicineProvider, child) {
-          if (medicineProvider.medicines.isNotEmpty) {
-            return FloatingActionButton(
-              onPressed: _addMedicine,
-              backgroundColor: const Color(0xFF3498db),
-              child: const Icon(Icons.add, color: Colors.white),
-            );
-          }
-          return const SizedBox.shrink();
-        },
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
-  Widget _buildStatItem(String title, String value, IconData icon) {
+  Widget _buildStatItem(String title, String value, IconData icon, Color color) {
     return Column(
       children: [
-        Icon(icon, color: const Color(0xFF3498db), size: 30),
-        const SizedBox(height: 8),
+        Icon(icon, color: color, size: 24),
+        const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2c3e50)),
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
         ),
-        Text(title, style: const TextStyle(fontSize: 12, color: Color(0xFF7f8c8d))),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 11,
+            color: color.withOpacity(0.9),
+          ),
+        ),
       ],
     );
   }
@@ -559,134 +868,191 @@ class _MyMedicineScreenState extends State<MyMedicineScreen> {
     final taken = List<bool>.from(medicine['taken'] ?? []);
     final allTaken = taken.isNotEmpty && taken.every((t) => t);
     final medicineId = medicine['id']?.toString() ?? '';
+    final streak = _calculateMedicineStreak(medicine);
     
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        medicine['name'] ?? 'Unknown Medicine',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2c3e50)),
-                      ),
-                      Text(
-                        '${medicine['dosage'] ?? ''} • ${medicine['schedule'] ?? ''}',
-                        style: const TextStyle(color: Color(0xFF7f8c8d)),
-                      ),
-                    ],
-                  ),
-                ),
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert, color: Color(0xFF7f8c8d)),
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(value: 'edit', child: Text('Edit Medicine')),
-                    const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: Colors.red))),
-                  ],
-                  onSelected: (value) {
-                    if (value == 'edit') {
-                      _editMedicine(medicine, index);
-                    } else if (value == 'delete') {
-                      _deleteMedicine(medicineId);
-                    }
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: allTaken ? const Color(0xFF27ae60).withOpacity(0.1) : const Color(0xFF3498db).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    medicine['remaining'] ?? 'Ongoing',
-                    style: TextStyle(
-                      color: allTaken ? const Color(0xFF27ae60) : const Color(0xFF3498db),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    medicine['instructions'] ?? '',
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF7f8c8d), fontStyle: FontStyle.italic),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ...times.asMap().entries.map((entry) {
-              final doseIndex = entry.key;
-              final time = entry.value;
-              final isTaken = doseIndex < taken.length ? taken[doseIndex] : false;
-              
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFf8f9fa),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: isTaken ? const Color(0xFF27ae60).withOpacity(0.3) : const Color(0xFFecf0f1)),
-                ),
-                child: Row(
-                  children: [
-                    Checkbox(
-                      value: isTaken,
-                      onChanged: (value) => _toggleDose(medicineId, doseIndex),
-                      activeColor: const Color(0xFF27ae60),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        time,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: isTaken ? const Color(0xFF27ae60) : const Color(0xFF2c3e50),
-                          decoration: isTaken ? TextDecoration.lineThrough : TextDecoration.none,
+      child: InkWell(
+        onTap: () => _showStreakDetails(medicine),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          medicine['name'] ?? 'Unknown Medicine',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2c3e50),
+                          ),
                         ),
-                      ),
+                        Text(
+                          '${medicine['dosage'] ?? ''} • ${medicine['schedule'] ?? ''}',
+                          style: const TextStyle(color: Color(0xFF7f8c8d)),
+                        ),
+                      ],
                     ),
+                  ),
+                  // Streak Badge
+                  if (streak > 0)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isTaken ? const Color(0xFF27ae60).withOpacity(0.1) : const Color(0xFF3498db).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
+                        color: const Color(0xFFe67e22).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Text(
-                        isTaken ? 'Taken' : 'Pending',
-                        style: TextStyle(
-                          color: isTaken ? const Color(0xFF27ae60) : const Color(0xFF3498db),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.local_fire_department,
+                            size: 14,
+                            color: Color(0xFFe67e22),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '$streak day streak',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFFe67e22),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              );
-            }),
-            const SizedBox(height: 8),
-            Text(
-              'Course: ${medicine['startDate'] ?? 'Not set'} to ${medicine['endDate'] ?? 'Not set'}',
-              style: const TextStyle(fontSize: 12, color: Color(0xFF7f8c8d)),
-            ),
-          ],
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert, color: Color(0xFF7f8c8d)),
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(value: 'edit', child: Text('Edit Medicine')),
+                      const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: Colors.red))),
+                    ],
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _editMedicine(medicine, index);
+                      } else if (value == 'delete') {
+                        _deleteMedicine(medicineId);
+                      }
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: allTaken ? const Color(0xFF27ae60).withOpacity(0.1) : const Color(0xFF3498db).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      medicine['remaining'] ?? 'Ongoing',
+                      style: TextStyle(
+                        color: allTaken ? const Color(0xFF27ae60) : const Color(0xFF3498db),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      medicine['instructions'] ?? '',
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF7f8c8d), fontStyle: FontStyle.italic),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ...times.asMap().entries.map((entry) {
+                final doseIndex = entry.key;
+                final time = entry.value;
+                final isTaken = doseIndex < taken.length ? taken[doseIndex] : false;
+                
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFf8f9fa),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: isTaken ? const Color(0xFF27ae60).withOpacity(0.3) : const Color(0xFFecf0f1)),
+                  ),
+                  child: Row(
+                    children: [
+                      Checkbox(
+                        value: isTaken,
+                        onChanged: (value) => _toggleDose(medicineId, doseIndex),
+                        activeColor: const Color(0xFF27ae60),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          time,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: isTaken ? const Color(0xFF27ae60) : const Color(0xFF2c3e50),
+                            decoration: isTaken ? TextDecoration.lineThrough : TextDecoration.none,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isTaken ? const Color(0xFF27ae60).withOpacity(0.1) : const Color(0xFF3498db).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          isTaken ? 'Taken' : 'Pending',
+                          style: TextStyle(
+                            color: isTaken ? const Color(0xFF27ae60) : const Color(0xFF3498db),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Course: ${medicine['startDate'] ?? 'Not set'} to ${medicine['endDate'] ?? 'Not set'}',
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF7f8c8d)),
+                  ),
+                  TextButton(
+                    onPressed: () => _showStreakDetails(medicine),
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(0, 0),
+                    ),
+                    child: const Text(
+                      'View Streak →',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF3498db),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

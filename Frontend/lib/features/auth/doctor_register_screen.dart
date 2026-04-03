@@ -4,7 +4,6 @@ import 'package:seva_pulse/features/doctor/screens/doctor_home_screen.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/models/user_model.dart';
 
-
 class DoctorRegisterScreen extends StatefulWidget {
   const DoctorRegisterScreen({Key? key}) : super(key: key);
 
@@ -19,32 +18,111 @@ class _DoctorRegisterScreenState extends State<DoctorRegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _specializationController = TextEditingController();
   final _experienceController = TextEditingController();
-  final _qualificationController = TextEditingController();
   final _hospitalController = TextEditingController();
+  
+  // Controller for Date of Birth to prevent rebuild issues
+  final TextEditingController _dobController = TextEditingController();
   
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   DateTime? _selectedDate;
+  
+  // Dropdown selections
+  String? _selectedSpecialization;
+  List<String> _selectedQualifications = [];
+  
+  // Specialization options
+  final List<String> _specializations = [
+    'Orthopaedic Surgeons',
+    'General Surgeons',
+    'Physicians/Internal Medicine',
+    'Nephrologists',
+    'Paediatricians',
+    'Neuro-Spine Surgeons',
+    'Cancer Specialist',
+    'Cardiologists',
+    'Dermatologists',
+    'Neurologists',
+    'Ophthalmologists',
+    'Psychiatrists',
+    'Radiologists',
+    'Urologists',
+    'Gastroenterologists',
+    'Endocrinologists',
+  ];
+  
+  // Qualification options
+  final List<String> _qualifications = [
+    'MBBS',
+    'MD',
+    'MS',
+    'DM',
+    'MCh',
+    'DNB',
+    'FRCS',
+    'MRCP',
+    'Fellowship',
+    'PhD',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _dobController.text = 'Select your date of birth';
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _nameController.dispose();
+    _phoneController.dispose();
+    _experienceController.dispose();
+    _hospitalController.dispose();
+    _dobController.dispose();
+    super.dispose();
+  }
 
   Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now().subtract(const Duration(days: 365 * 30)), // 30 years ago
+      initialDate: _selectedDate ?? DateTime.now().subtract(const Duration(days: 365 * 30)),
       firstDate: DateTime(1900),
-      lastDate: DateTime.now().subtract(const Duration(days: 365 * 25)), // At least 25 years old
+      lastDate: DateTime.now().subtract(const Duration(days: 365 * 25)),
     );
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
+        _dobController.text = '${picked.day}/${picked.month}/${picked.year}';
       });
     }
   }
 
   Future<void> _registerDoctor() async {
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    
+    if (_selectedSpecialization == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a specialization'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    
+    if (_selectedQualifications.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select at least one qualification'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
@@ -55,48 +133,57 @@ class _DoctorRegisterScreenState extends State<DoctorRegisterScreen> {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       
+      // Format qualifications as a comma-separated string to store in experience field or address
+      // Since User model doesn't have qualification field, we'll combine it with experience
+      final qualificationsString = _selectedQualifications.join(', ');
+      final experienceWithQualification = '${_experienceController.text.trim()} years (${qualificationsString})';
+      
       // Create doctor user object
       final user = User(
-        id: '', // Will be set by the server
+        id: '',
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         phone: _phoneController.text.trim(),
         userType: 'doctor',
         profileImage: null,
         createdAt: DateTime.now(),
-        specialization: _specializationController.text.trim(),
-        experience: _experienceController.text.trim(),
+        specialization: _selectedSpecialization,
+        experience: experienceWithQualification, // Store experience + qualifications together
         address: _hospitalController.text.trim(),
         dateOfBirth: _selectedDate,
       );
 
-      // Register doctor using your AuthProvider
       final success = await authProvider.register(user, _passwordController.text);
 
       if (success && mounted) {
-        // Navigate to doctor home screen
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Doctor registration successful!'),
+            backgroundColor: Color(0xFF27ae60),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const DoctorHomeScreen()),
           (route) => false,
         );
       } else if (mounted) {
-        // Show error from auth provider
-        if (authProvider.error != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(authProvider.error!),
-              backgroundColor: const Color(0xFFe74c3c),
-            ),
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authProvider.error ?? 'Registration failed. Please try again.'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Registration failed: ${e.toString()}'),
-            backgroundColor: const Color(0xFFe74c3c),
+            content: Text('Registration failed: ${e.toString().replaceFirst('Exception: ', '')}'),
+            backgroundColor: Colors.red,
           ),
         );
       }
@@ -109,19 +196,78 @@ class _DoctorRegisterScreenState extends State<DoctorRegisterScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    _nameController.dispose();
-    _phoneController.dispose();
-    _specializationController.dispose();
-    _experienceController.dispose();
-    _qualificationController.dispose();
-    _hospitalController.dispose();
-    super.dispose();
-  }
+  void _showQualificationDialog() {
+  // Create a temporary list to track selections in the dialog
+  List<String> tempSelected = List.from(_selectedQualifications);
+  
+  showDialog(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text(
+              'Select Qualifications',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            content: Container(
+              width: double.maxFinite,
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.5,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: _qualifications.map((qualification) {
+                    return CheckboxListTile(
+                      title: Text(
+                        qualification,
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                      value: tempSelected.contains(qualification),
+                      onChanged: (bool? checked) {
+                        setDialogState(() {
+                          if (checked == true) {
+                            tempSelected.add(qualification);
+                          } else {
+                            tempSelected.remove(qualification);
+                          }
+                        });
+                      },
+                      activeColor: const Color(0xFF3498db),
+                      dense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _selectedQualifications = List.from(tempSelected);
+                  });
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF27ae60),
+                ),
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -246,8 +392,9 @@ class _DoctorRegisterScreenState extends State<DoctorRegisterScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Date of Birth Field
+              // Date of Birth Field - FIXED with controller
               TextFormField(
+                controller: _dobController,
                 readOnly: true,
                 decoration: InputDecoration(
                   labelText: 'Date of Birth (Optional)',
@@ -259,9 +406,7 @@ class _DoctorRegisterScreenState extends State<DoctorRegisterScreen> {
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: Color(0xFF3498db)),
                   ),
-                  hintText: _selectedDate == null 
-                      ? 'Select your date of birth' 
-                      : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
+                  hintText: 'Select your date of birth',
                 ),
                 onTap: _selectDate,
               ),
@@ -271,9 +416,9 @@ class _DoctorRegisterScreenState extends State<DoctorRegisterScreen> {
               _buildSectionHeader('Professional Information'),
               const SizedBox(height: 20),
 
-              // Specialization Field
-              TextFormField(
-                controller: _specializationController,
+              // Specialization Dropdown
+              DropdownButtonFormField<String>(
+                value: _selectedSpecialization,
                 decoration: InputDecoration(
                   labelText: 'Specialization *',
                   prefixIcon: const Icon(Icons.medical_services, color: Color(0xFF3498db)),
@@ -284,20 +429,78 @@ class _DoctorRegisterScreenState extends State<DoctorRegisterScreen> {
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: Color(0xFF3498db)),
                   ),
-                  hintText: 'e.g., Cardiologist, Dermatologist',
+                  hintText: 'Select your specialization',
                 ),
+                items: _specializations.map((String specialization) {
+                  return DropdownMenuItem<String>(
+                    value: specialization,
+                    child: Text(specialization),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedSpecialization = newValue;
+                  });
+                },
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter your specialization';
+                    return 'Please select your specialization';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 20),
 
+              // Qualifications Dropdown
+              InkWell(
+                onTap: _showQualificationDialog,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.school, color: Color(0xFF3498db)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Qualifications *',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _selectedQualifications.isEmpty
+                                  ? 'Select your qualifications'
+                                  : _selectedQualifications.join(', '),
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: _selectedQualifications.isEmpty
+                                    ? Colors.grey.shade500
+                                    : Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_drop_down, color: Color(0xFF3498db)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
               // Experience Field
               TextFormField(
                 controller: _experienceController,
+                keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   labelText: 'Years of Experience *',
                   prefixIcon: const Icon(Icons.work, color: Color(0xFF3498db)),
@@ -308,35 +511,14 @@ class _DoctorRegisterScreenState extends State<DoctorRegisterScreen> {
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: Color(0xFF3498db)),
                   ),
-                  hintText: 'e.g., 5 years',
+                  hintText: 'e.g., 5',
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your experience';
                   }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-
-              // Qualification Field
-              TextFormField(
-                controller: _qualificationController,
-                decoration: InputDecoration(
-                  labelText: 'Qualifications *',
-                  prefixIcon: const Icon(Icons.school, color: Color(0xFF3498db)),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF3498db)),
-                  ),
-                  hintText: 'e.g., MBBS, MD, MS',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your qualifications';
+                  if (int.tryParse(value) == null) {
+                    return 'Please enter a valid number';
                   }
                   return null;
                 },
@@ -546,9 +728,9 @@ class _DoctorRegisterScreenState extends State<DoctorRegisterScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF3498db).withValues(alpha: 0.1),
+        color: const Color(0xFF3498db).withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF3498db).withValues(alpha: 0.3)),
+        border: Border.all(color: const Color(0xFF3498db).withOpacity(0.3)),
       ),
       child: Text(
         title,

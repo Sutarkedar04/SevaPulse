@@ -1,24 +1,24 @@
 const HealthCamp = require('../models/HealthCamp');
 
-exports.getHealthCamps = async (req, res) => {
+exports.getHealthCamps = async (req, res, next) => {
   try {
     const camps = await HealthCamp.find().sort({ date: 1 });
     res.status(200).json({ success: true, data: camps });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-exports.getHealthCamp = async (req, res) => {
+exports.getHealthCamp = async (req, res, next) => {
   try {
     const camp = await HealthCamp.findById(req.params.id);
     res.status(200).json({ success: true, data: camp });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-exports.registerForCamp = async (req, res) => {
+exports.registerForCamp = async (req, res, next) => {
   try {
     const camp = await HealthCamp.findById(req.params.id);
     if (!camp) {
@@ -34,6 +34,6 @@ exports.registerForCamp = async (req, res) => {
     
     res.status(200).json({ success: true, message: 'Registered successfully', data: camp });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };

@@ -1,7 +1,7 @@
 // src/controllers/medicineController.js
 const Medicine = require('../models/Medicine');
 
-exports.getMedicines = async (req, res) => {
+exports.getMedicines = async (req, res, next) => {
   try {
     console.log('Fetching medicines for user:', req.user.id);
     const medicines = await Medicine.find({ user: req.user.id });
@@ -9,11 +9,11 @@ exports.getMedicines = async (req, res) => {
     res.status(200).json({ success: true, data: medicines });
   } catch (error) {
     console.error('Error in getMedicines:', error);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-exports.createMedicine = async (req, res) => {
+exports.createMedicine = async (req, res, next) => {
   try {
     console.log('Creating medicine for user:', req.user.id);
     console.log('Medicine data:', req.body);
@@ -41,11 +41,11 @@ exports.createMedicine = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in createMedicine:', error);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-exports.updateMedicine = async (req, res) => {
+exports.updateMedicine = async (req, res, next) => {
   try {
     console.log('Updating medicine ID:', req.params.id);
     const medicine = await Medicine.findByIdAndUpdate(
@@ -62,11 +62,11 @@ exports.updateMedicine = async (req, res) => {
     res.status(200).json({ success: true, data: medicine });
   } catch (error) {
     console.error('Error in updateMedicine:', error);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-exports.deleteMedicine = async (req, res) => {
+exports.deleteMedicine = async (req, res, next) => {
   try {
     console.log('Attempting to delete medicine with ID:', req.params.id);
     console.log('User ID:', req.user.id);
@@ -78,7 +78,7 @@ exports.deleteMedicine = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Medicine not found' });
     }
     
-    // Optional: Check if the medicine belongs to the user
+    // Check if the medicine belongs to the user
     if (medicine.user.toString() !== req.user.id) {
       console.log('Unauthorized: Medicine does not belong to user');
       return res.status(403).json({ success: false, message: 'Not authorized to delete this medicine' });
@@ -90,11 +90,11 @@ exports.deleteMedicine = async (req, res) => {
     res.status(200).json({ success: true, message: 'Medicine deleted' });
   } catch (error) {
     console.error('Error in deleteMedicine:', error);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-exports.toggleDose = async (req, res) => {
+exports.toggleDose = async (req, res, next) => {
   try {
     console.log('Toggling dose for medicine ID:', req.params.id);
     console.log('Dose index:', req.params.doseIndex);
@@ -118,6 +118,6 @@ exports.toggleDose = async (req, res) => {
     res.status(200).json({ success: true, data: medicine });
   } catch (error) {
     console.error('Error in toggleDose:', error);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };

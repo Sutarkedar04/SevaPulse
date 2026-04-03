@@ -1,10 +1,9 @@
 const CanteenItem = require('../models/CanteenItem');
 
-exports.getCanteenMenu = async (req, res) => {
+exports.getCanteenMenu = async (req, res, next) => {
   try {
     const items = await CanteenItem.find({ available: true });
     
-    // Group by category
     const menu = {};
     items.forEach(item => {
       if (!menu[item.category]) {
@@ -24,6 +23,6 @@ exports.getCanteenMenu = async (req, res) => {
     
     res.status(200).json({ success: true, data: menuArray });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };

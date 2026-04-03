@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import '../../../core/constants/api_constants.dart';
+import '../../../data/providers/auth_provider.dart';
 
 class HealthFeedScreen extends StatefulWidget {
   const HealthFeedScreen({Key? key}) : super(key: key);
@@ -9,85 +14,168 @@ class HealthFeedScreen extends StatefulWidget {
 }
 
 class _HealthFeedScreenState extends State<HealthFeedScreen> {
-  final List<HealthCamp> _upcomingCamps = [
-    HealthCamp(
-      id: '1',
-      title: 'Free Heart Checkup Camp',
-      organization: 'Seva Pulse Hospital',
-      date: DateTime(2024, 12, 20),
-      time: '9:00 AM - 4:00 PM',
-      location: 'Main Hospital Campus, Ground Floor',
-      description: 'Comprehensive heart health screening including ECG, blood pressure, cholesterol check, and cardiologist consultation.',
-      imageUrl: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aGVhcnQlMjBjaGVja3VwfGVufDB8fDB8fHww&w=1000&q=80',
-      availableSlots: 150,
-      registeredParticipants: 89,
-      services: ['ECG', 'BP Check', 'Cholesterol Test', 'Cardiologist Consultation'],
-      contact: '+91-9876543210',
-      isFree: true,
-    ),
-    HealthCamp(
-      id: '2',
-      title: 'Diabetes Awareness & Screening',
-      organization: 'Diabetes Care Foundation',
-      date: DateTime(2024, 12, 22),
-      time: '10:00 AM - 3:00 PM',
-      location: 'Community Health Center, Sector 15',
-      description: 'Free diabetes screening and awareness program with nutritionist consultation and lifestyle guidance.',
-      imageUrl: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8ZGlhYmV0ZXMlMjB0ZXN0fGVufDB8fDB8fHww&w=1000&q=80',
-      availableSlots: 200,
-      registeredParticipants: 156,
-      services: ['Blood Sugar Test', 'HbA1c Test', 'Nutritionist Consultation', 'Diet Plan'],
-      contact: 'diabetescare@example.com',
-      isFree: true,
-    ),
-    HealthCamp(
-      id: '3',
-      title: 'Pediatric Health Camp',
-      organization: 'Child Health Initiative',
-      date: DateTime(2024, 12, 25),
-      time: '8:00 AM - 2:00 PM',
-      location: 'Children\'s Wing, Seva Pulse Hospital',
-      description: 'Special health camp for children including vaccination, growth monitoring, and pediatric consultation.',
-      imageUrl: 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cGVkaWF0cmljfGVufDB8fDB8fHww&w=1000&q=80',
-      availableSlots: 100,
-      registeredParticipants: 45,
-      services: ['Vaccination', 'Growth Monitoring', 'Pediatric Consultation', 'Nutrition Assessment'],
-      contact: '+91-9876543211',
-      isFree: false,
-      fee: 200,
-    ),
-    HealthCamp(
-      id: '4',
-      title: 'Eye Care Camp',
-      organization: 'Vision Care Trust',
-      date: DateTime(2024, 12, 28),
-      time: '9:30 AM - 5:00 PM',
-      location: 'Ophthalmology Department, 3rd Floor',
-      description: 'Free eye checkup camp including vision testing, cataract screening, and free spectacles for eligible patients.',
-      imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8ZXllJTIwY2hlY2t1cHxlbnwwfHwwfHx8MA%3D%3D&w=1000&q=80',
-      availableSlots: 300,
-      registeredParticipants: 234,
-      services: ['Vision Testing', 'Cataract Screening', 'Glaucoma Test', 'Free Spectacles'],
-      contact: '+91-9876543212',
-      isFree: true,
-    ),
-    HealthCamp(
-      id: '5',
-      title: 'Mental Wellness Workshop',
-      organization: 'Mind Care Foundation',
-      date: DateTime(2024, 12, 30),
-      time: '2:00 PM - 6:00 PM',
-      location: 'Conference Hall, Main Building',
-      description: 'Interactive workshop on mental health awareness, stress management, and mindfulness techniques.',
-      imageUrl: 'https://images.unsplash.com/photo-1593811167562-9cef47bfa4d9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8bWVudGFsJTIwaGVhbHRofGVufDB8fDB8fHww&w=1000&q=80',
-      availableSlots: 80,
-      registeredParticipants: 62,
-      services: ['Counseling Session', 'Stress Management', 'Mindfulness Training', 'Therapist Consultation'],
-      contact: 'mindcare@example.com',
-      isFree: false,
-      fee: 500,
-    ),
-  ];
+  List<HealthCamp> _upcomingCamps = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchHealthCamps();
+  }
+
+  Future<void> _fetchHealthCamps() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+
+      if (token == null || token.isEmpty) {
+        setState(() {
+          _error = 'Please login to view health camps';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      print('📡 Fetching health camps from: ${ApiConstants.healthCamps}');
+
+      final response = await http.get(
+        Uri.parse(ApiConstants.healthCamps),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 30));
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] && data['data'] != null) {
+          final camps = List<Map<String, dynamic>>.from(data['data']);
+          
+          setState(() {
+            _upcomingCamps = camps.map((camp) => HealthCamp.fromJson(camp)).toList();
+            _isLoading = false;
+          });
+          
+          print('✅ Loaded ${_upcomingCamps.length} health camps');
+        } else {
+          setState(() {
+            _error = data['message'] ?? 'No health camps found';
+            _isLoading = false;
+          });
+        }
+      } else if (response.statusCode == 401) {
+        setState(() {
+          _error = 'Session expired. Please login again.';
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _error = 'Failed to load health camps. Status: ${response.statusCode}';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching health camps: $e');
+      setState(() {
+        _error = 'Error: ${e.toString()}';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _registerForCamp(HealthCamp camp) async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+
+      if (token == null || token.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please login to register'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      print('📝 Registering for camp: ${camp.id}');
+
+      final response = await http.post(
+        Uri.parse('${ApiConstants.registerCamp}/${camp.id}/register'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 30));
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          // Refresh camps to update registered count
+          await _fetchHealthCamps();
+          
+          _showRegistrationSuccess(camp);
+        } else {
+          throw Exception(data['message'] ?? 'Registration failed');
+        }
+      } else {
+        final data = json.decode(response.body);
+        throw Exception(data['message'] ?? 'Registration failed');
+      }
+    } catch (e) {
+      print('Error registering for camp: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString().replaceFirst('Exception: ', '')}'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  void _showRegistrationSuccess(HealthCamp camp) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Registration Successful!',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'You have registered for ${camp.title}',
+              style: const TextStyle(fontSize: 14),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF27ae60),
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -104,24 +192,68 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
         backgroundColor: const Color(0xFF3498db),
         foregroundColor: Colors.white,
         elevation: 0,
-      ),
-      body: Column(
-        children: [
-          // Header Stats
-          _buildHeaderStats(),
-          
-          // Camps List
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _upcomingCamps.length,
-              itemBuilder: (context, index) {
-                return _buildCampCard(_upcomingCamps[index]);
-              },
-            ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _fetchHealthCamps,
+            tooltip: 'Refresh',
           ),
         ],
       ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_outline, size: 64, color: Colors.red),
+                      const SizedBox(height: 16),
+                      Text(_error!),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _fetchHealthCamps,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                )
+              : _upcomingCamps.isEmpty
+                  ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.medical_services, size: 64, color: Color(0xFFbdc3c7)),
+                          SizedBox(height: 16),
+                          Text(
+                            'No health camps available',
+                            style: TextStyle(fontSize: 16, color: Color(0xFF7f8c8d)),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Check back later for upcoming health camps',
+                            style: TextStyle(fontSize: 14, color: Color(0xFF95a5a6)),
+                          ),
+                        ],
+                      ),
+                    )
+                  : Column(
+                      children: [
+                        // Header Stats
+                        _buildHeaderStats(),
+                        
+                        // Camps List
+                        Expanded(
+                          child: ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: _upcomingCamps.length,
+                            itemBuilder: (context, index) {
+                              return _buildCampCard(_upcomingCamps[index]);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
     );
   }
 
@@ -183,7 +315,7 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.2),
+            color: Colors.white.withOpacity(0.2),
             borderRadius: BorderRadius.circular(25),
           ),
           child: Icon(icon, color: Colors.white, size: 24),
@@ -221,7 +353,7 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Camp Image with error handling
+          // Camp Image
           Stack(
             children: [
               Container(
@@ -232,39 +364,37 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
                     topLeft: Radius.circular(16),
                     topRight: Radius.circular(16),
                   ),
-                  color: const Color(0xFF3498db).withValues(alpha: 0.1),
+                  color: const Color(0xFF3498db).withOpacity(0.1),
                 ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                  ),
-                  child: Image.network(
-                    camp.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
+                child: camp.imageUrl.isNotEmpty
+                    ? ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(16),
+                        ),
+                        child: Image.network(
+                          camp.imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: const Color(0xFFecf0f1),
+                              child: const Icon(
+                                Icons.medical_services,
+                                color: Color(0xFFbdc3c7),
+                                size: 50,
+                              ),
+                            );
+                          },
+                        ),
+                      )
+                    : Container(
                         color: const Color(0xFFecf0f1),
                         child: const Icon(
                           Icons.medical_services,
                           color: Color(0xFFbdc3c7),
                           size: 50,
                         ),
-                      );
-                    },
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(
-                        color: const Color(0xFFecf0f1),
-                        child: const Center(
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3498db)),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                      ),
               ),
               // Free/Paid Badge
               Positioned(
@@ -293,7 +423,7 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.7),
+                    color: Colors.black.withOpacity(0.7),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -363,9 +493,9 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF3498db).withValues(alpha: 0.1),
+                        color: const Color(0xFF3498db).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFF3498db).withValues(alpha: 0.3)),
+                        border: Border.all(color: const Color(0xFF3498db).withOpacity(0.3)),
                       ),
                       child: Text(
                         service,
@@ -514,31 +644,40 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Camp Image with error handling
+                  // Camp Image
                   Container(
                     height: 200,
                     width: double.infinity,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
-                      color: const Color(0xFF3498db).withValues(alpha: 0.1),
+                      color: const Color(0xFF3498db).withOpacity(0.1),
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.network(
-                        camp.imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
+                    child: camp.imageUrl.isNotEmpty
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image.network(
+                              camp.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: const Color(0xFFecf0f1),
+                                  child: const Icon(
+                                    Icons.medical_services,
+                                    color: Color(0xFFbdc3c7),
+                                    size: 60,
+                                  ),
+                                );
+                              },
+                            ),
+                          )
+                        : Container(
                             color: const Color(0xFFecf0f1),
                             child: const Icon(
                               Icons.medical_services,
                               color: Color(0xFFbdc3c7),
                               size: 60,
                             ),
-                          );
-                        },
-                      ),
-                    ),
+                          ),
                   ),
                   const SizedBox(height: 20),
                   
@@ -618,9 +757,9 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF3498db).withValues(alpha: 0.1),
+                          color: const Color(0xFF3498db).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFF3498db).withValues(alpha: 0.3)),
+                          border: Border.all(color: const Color(0xFF3498db).withOpacity(0.3)),
                         ),
                         child: Text(
                           service,
@@ -754,88 +893,9 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
       ),
     );
   }
-
-  void _registerForCamp(HealthCamp camp) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Register for Camp'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              camp.title,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2c3e50),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Date: ${DateFormat('MMM dd, yyyy').format(camp.date)}',
-              style: const TextStyle(color: Color(0xFF7f8c8d)),
-            ),
-            Text(
-              'Time: ${camp.time}',
-              style: const TextStyle(color: Color(0xFF7f8c8d)),
-            ),
-            const SizedBox(height: 16),
-            const Text('Would you like to register for this health camp?'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _showRegistrationSuccess(camp);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF27ae60),
-            ),
-            child: const Text('Confirm Registration'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showRegistrationSuccess(HealthCamp camp) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Registration Successful!',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'You have registered for ${camp.title}',
-              style: const TextStyle(fontSize: 14),
-            ),
-          ],
-        ),
-        backgroundColor: const Color(0xFF27ae60),
-        duration: const Duration(seconds: 4),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-    );
-  }
 }
 
+// HealthCamp model with fromJson
 class HealthCamp {
   final String id;
   final String title;
@@ -868,4 +928,23 @@ class HealthCamp {
     required this.isFree,
     this.fee,
   });
+
+  factory HealthCamp.fromJson(Map<String, dynamic> json) {
+    return HealthCamp(
+      id: json['_id']?.toString() ?? '',
+      title: json['title'] ?? '',
+      organization: json['organization'] ?? '',
+      date: DateTime.parse(json['date']),
+      time: json['time'] ?? '',
+      location: json['location'] ?? '',
+      description: json['description'] ?? '',
+      imageUrl: json['imageUrl'] ?? '',
+      availableSlots: json['availableSlots'] ?? 0,
+      registeredParticipants: json['registeredParticipants'] ?? 0,
+      services: List<String>.from(json['services'] ?? []),
+      contact: json['contact'] ?? '',
+      isFree: json['isFree'] ?? true,
+      fee: json['fee'],
+    );
+  }
 }

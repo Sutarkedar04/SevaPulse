@@ -98,39 +98,57 @@ Future<bool> login(String email, String password, String userType) async {
   }
 }
 
-  Future<bool> register(User user, String password) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
+  // lib/data/providers/auth_provider.dart
+// Replace the register method with this:
 
-    try {
-      final userData = {
-        'name': user.name,
-        'email': user.email,
-        'phone': user.phone,
-        'userType': user.userType,
-        'specialization': user.specialization,
-        'experience': user.experience,
-        'dateOfBirth': user.dateOfBirth?.toIso8601String(),
-        'address': user.address,
-        'gender': user.gender,
-      };
+Future<bool> register(User user, String password) async {
+  _isLoading = true;
+  _error = null;
+  notifyListeners();
+
+  try {
+    final userData = {
+      'name': user.name,
+      'email': user.email,
+      'phone': user.phone,
+      'userType': user.userType,
+      'specialization': user.specialization,
+      'experience': user.experience,
+      'dateOfBirth': user.dateOfBirth?.toIso8601String(),
+      'address': user.address,
+      'gender': user.gender,
+    };
+    
+    // Get the response which should include token
+    final result = await _authService.register(userData, password);
+    
+    // The result should contain user and token
+    if (result.containsKey('token') && result.containsKey('user')) {
+      _user = result['user'];
+      _token = result['token'];
       
-      final registeredUser = await _authService.register(userData, password);
-      _user = registeredUser;
+      debugPrint('✅ Registration successful, user ID: ${_user?.id}');
+      debugPrint('✅ Token received: ${_token?.substring(0, 20)}...');
+      
+      // Store token in SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('auth_token', _token!);
+      await prefs.setString('user_id', _user!.id);
       
       _isLoading = false;
       notifyListeners();
       return true;
-    } catch (e) {
-      _error = e.toString().replaceFirst('Exception: ', '');
-      debugPrint('Registration error: $_error');
-      _isLoading = false;
-      notifyListeners();
-      return false;
+    } else {
+      throw Exception('No token received from server');
     }
+  } catch (e) {
+    _error = e.toString().replaceFirst('Exception: ', '');
+    debugPrint('❌ Registration error: $_error');
+    _isLoading = false;
+    notifyListeners();
+    return false;
   }
-
+}
   Future<void> logout() async {
     _user = null;
     _error = null;

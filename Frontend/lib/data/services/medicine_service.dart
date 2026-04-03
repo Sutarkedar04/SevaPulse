@@ -1,6 +1,5 @@
 // lib/core/services/medicine_service.dart
 import 'dart:convert';
-// Add this import for debugPrint
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../core/constants/api_constants.dart';
@@ -81,6 +80,9 @@ class MedicineService {
 
   Future<Map<String, dynamic>> updateMedicine(String id, Map<String, dynamic> medicineData) async {
     try {
+      debugPrint('Updating medicine at: ${ApiConstants.medicines}/$id');
+      debugPrint('Request body: ${json.encode(medicineData)}');
+      
       final response = await http.put(
         Uri.parse('${ApiConstants.medicines}/$id'),
         headers: _getHeaders(),
@@ -111,14 +113,16 @@ class MedicineService {
     }
   }
 
-  Future<void> toggleDose(String id, int doseIndex) async {
+  Future<Map<String, dynamic>> toggleDose(String id, int doseIndex) async {
     try {
+      debugPrint('Toggling dose at: ${ApiConstants.medicines}/$id/toggle/$doseIndex');
       final response = await http.put(
         Uri.parse('${ApiConstants.medicines}/$id/toggle/$doseIndex'),
         headers: _getHeaders(),
       ).timeout(const Duration(seconds: 30));
 
-      await _handleResponse(response);
+      final data = await _handleResponse(response);
+      return data['data'];
     } catch (e) {
       debugPrint('Error in toggleDose: $e');
       rethrow;

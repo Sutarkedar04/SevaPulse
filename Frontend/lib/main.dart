@@ -22,10 +22,9 @@ import 'features/user/screens/contact_us_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Show loading while detecting server
   print('🚀 Starting Seva Pulse App...');
-  await ApiConstants.autoDetectServer();
-  print('✅ Server detection complete');
+  print('📡 Using backend URL: ${ApiConstants.baseUrl}');
+  print('✅ Ready to start');
   
   runApp(const MyApp());
 }

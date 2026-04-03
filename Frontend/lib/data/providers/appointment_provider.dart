@@ -82,22 +82,42 @@ Future<void> loadAppointments() async {
     }
   }
 
-  Future<bool> cancelAppointment(String id) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
+  // lib/data/providers/appointment_provider.dart
+// This method should already exist, but verify it's correct:
 
-    try {
-      await _appointmentService.cancelAppointment(id);
-      _appointments.removeWhere((a) => a.id == id);
-      _isLoading = false;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _error = e.toString().replaceFirst('Exception: ', '');
-      _isLoading = false;
-      notifyListeners();
-      return false;
-    }
+// lib/data/providers/appointment_provider.dart
+// Update the cancelAppointment method:
+
+// lib/data/providers/appointment_provider.dart
+// Update the cancelAppointment method:
+
+Future<bool> cancelAppointment(String id) async {
+  _isLoading = true;
+  _error = null;
+  notifyListeners();
+
+  try {
+    print('🔄 Cancelling appointment with ID: $id');
+    await _appointmentService.cancelAppointment(id);
+    
+    // Remove the appointment from local list immediately
+    final beforeCount = _appointments.length;
+    _appointments.removeWhere((a) => a.id == id);
+    final afterCount = _appointments.length;
+    
+    print('✅ Appointment cancelled successfully');
+    print('   Removed from list: ${beforeCount - afterCount} appointment(s)');
+    print('   Remaining appointments: ${_appointments.length}');
+    
+    _isLoading = false;
+    notifyListeners();
+    return true;
+  } catch (e) {
+    _error = e.toString().replaceFirst('Exception: ', '');
+    print('❌ Error cancelling appointment: $_error');
+    _isLoading = false;
+    notifyListeners();
+    return false;
   }
+}
 }

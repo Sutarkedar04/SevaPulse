@@ -6,8 +6,8 @@ import '../../../data/providers/appointment_provider.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../shared/widgets/upcoming_visits_card.dart';
 import '../../../shared/widgets/canteen_card.dart';
+import '../../../shared/widgets/horizontal_card_carousel.dart';
 import 'home_welcome_section.dart';
-import 'home_card_stack.dart';
 
 class HomeContent extends StatefulWidget {
   const HomeContent({Key? key}) : super(key: key);
@@ -87,7 +87,7 @@ class _HomeContentState extends State<HomeContent> with AutomaticKeepAliveClient
     ];
   }
 
-  void _loadAppointments() async {
+  Future<void> _loadAppointments() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
     
@@ -100,14 +100,13 @@ class _HomeContentState extends State<HomeContent> with AutomaticKeepAliveClient
       appointmentProvider.setToken(authProvider.token!);
       await appointmentProvider.loadAppointments();
       
-      // Print all appointments after loading
       print('\n=== ALL APPOINTMENTS FROM API ===');
       for (var apt in appointmentProvider.appointments) {
         print('Appointment ID: ${apt.id}');
         print('  - patientId: ${apt.patientId}');
         print('  - doctorName: ${apt.doctorName}');
         print('  - patientName: ${apt.patientName}');
-        print('  - date: ${apt.date}');
+        print('  - date: ${apt.date.toLocal()}');
         print('  - time: ${apt.time}');
         print('  - status: ${apt.status}');
         print('  - Matches user? ${apt.patientId == authProvider.user?.id}');
@@ -133,7 +132,7 @@ class _HomeContentState extends State<HomeContent> with AutomaticKeepAliveClient
     
     return RefreshIndicator(
       onRefresh: () async {
-        _loadAppointments();
+        await _loadAppointments();
       },
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -144,26 +143,16 @@ class _HomeContentState extends State<HomeContent> with AutomaticKeepAliveClient
             const HomeWelcomeSection(),
             const SizedBox(height: 20),
             
-            // Queue Structure Card Stack
-            HomeCardStack(
+            // Horizontal Card Carousel
+            HorizontalCardCarousel(
               cardData: cardData,
               cardColors: cardColors,
+              autoSlideInterval: const Duration(seconds: 5),
             ),
             
-            const SizedBox(height: 10),
-            const Center(
-              child: Text(
-                'Swipe the card to explore more options',
-                style: TextStyle(
-                  color: Color(0xFF7f8c8d),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
             const SizedBox(height: 20),
             
-            // Upcoming Visits
+            // Upcoming Visits Section with Refresh Button
             Consumer<AppointmentProvider>(
               builder: (context, appointmentProvider, child) {
                 final authProvider = Provider.of<AuthProvider>(context);
@@ -181,31 +170,25 @@ class _HomeContentState extends State<HomeContent> with AutomaticKeepAliveClient
                   return _buildErrorCard(appointmentProvider.error!);
                 }
                 
-                // Filter appointments for this user
+                // Filter by user and exclude cancelled appointments
                 final userAppointments = appointmentProvider.appointments
-                    .where((a) {
-                      final match = a.patientId == userId;
-                      if (!match) {
-                        print('❌ Appointment patientId: ${a.patientId} does NOT match userId: $userId');
-                      } else {
-                        print('✅ Appointment patientId matches userId');
-                      }
-                      return match;
-                    })
+                    .where((a) => a.patientId == userId && a.status.toLowerCase() != 'cancelled')
                     .toList();
                 
-                print('Appointments after user filter: ${userAppointments.length}');
+                print('Appointments after user filter (excluding cancelled): ${userAppointments.length}');
                 
-                // Filter upcoming dates
+                // Get current date in local timezone
                 final now = DateTime.now();
                 final today = DateTime(now.year, now.month, now.day);
                 
                 final upcomingAppointments = userAppointments
                     .where((a) {
+                      // Convert to local and compare dates
+                      final localDate = a.date.toLocal();
                       final appointmentDate = DateTime(
-                        a.date.year,
-                        a.date.month,
-                        a.date.day,
+                        localDate.year,
+                        localDate.month,
+                        localDate.day,
                       );
                       return appointmentDate.isAtSameMomentAs(today) || 
                              appointmentDate.isAfter(today);
@@ -215,12 +198,99 @@ class _HomeContentState extends State<HomeContent> with AutomaticKeepAliveClient
                 
                 print('Upcoming appointments count: ${upcomingAppointments.length}');
                 for (var apt in upcomingAppointments) {
-                  print('  ✓ ${apt.doctorName} on ${DateFormat('MMM dd').format(apt.date)} at ${apt.time}');
+                  print('  ✓ ${apt.doctorName} on ${DateFormat('MMM dd').format(apt.date.toLocal())} at ${apt.time} (${apt.status})');
                 }
                 
-                return UpcomingVisitsCard(
-                  upcomingAppointments: upcomingAppointments,
-                  onBookAppointment: () => _bookAppointment(context),
+                // Also show past appointments (excluding cancelled)
+                final pastAppointments = userAppointments
+                    .where((a) {
+                      final localDate = a.date.toLocal();
+                      final appointmentDate = DateTime(
+                        localDate.year,
+                        localDate.month,
+                        localDate.day,
+                      );
+                      return appointmentDate.isBefore(today);
+                    })
+                    .toList()
+                  ..sort((a, b) => b.date.compareTo(a.date)); // Most recent first
+                
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header with title and refresh button
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.upcoming, color: Color(0xFF3498db)),
+                            SizedBox(width: 8),
+                            Text(
+                              'My Appointments',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF2c3e50),
+                              ),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.refresh, color: Color(0xFF3498db)),
+                          onPressed: () {
+                            _loadAppointments();
+                          },
+                          tooltip: 'Refresh Appointments',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Upcoming Visits Card
+                    UpcomingVisitsCard(
+                      upcomingAppointments: upcomingAppointments,
+                      onBookAppointment: () => _bookAppointment(context),
+                    ),
+                    
+                    // Show past appointments if any
+                    if (pastAppointments.isNotEmpty) ...[
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Past Appointments',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF7f8c8d),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ...pastAppointments.map((appointment) => 
+                        Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: ListTile(
+                            leading: const Icon(Icons.history, color: Color(0xFF7f8c8d)),
+                            title: Text('Dr. ${appointment.doctorName}'),
+                            subtitle: Text('${DateFormat('MMM dd, yyyy').format(appointment.date.toLocal())} at ${appointment.time}'),
+                            trailing: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                appointment.status.toUpperCase(),
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Color(0xFF7f8c8d),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 );
               },
             ),

@@ -1,12 +1,10 @@
 const express = require('express');
 const router = express.Router();
+const { protect } = require('../middleware/auth');
+const { getPrescriptions, createPrescription, getPrescriptionsByPatient } = require('../controllers/prescriptionController');
 
-router.get('/', (req, res) => {
-  res.json({ success: true, data: [] });
-});
-
-router.post('/', (req, res) => {
-  res.json({ success: true, message: 'Prescription created' });
-});
+router.get('/', protect, getPrescriptions);
+router.post('/', protect, createPrescription);
+router.get('/patient/:patientId', protect, getPrescriptionsByPatient);
 
 module.exports = router;

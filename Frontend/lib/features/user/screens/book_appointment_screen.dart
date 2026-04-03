@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
-import 'package:seva_pulse/data/providers/appointment_provider.dart';
 import 'dart:convert';
 import '../../../data/providers/auth_provider.dart';
+import '../../../data/providers/appointment_provider.dart';
 import '../../../core/constants/api_constants.dart';
 
 class BookAppointmentScreen extends StatefulWidget {
@@ -251,8 +251,11 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                 final date = DateTime(_currentMonth.year, _currentMonth.month, day);
                 final today = DateTime.now();
                 final maxDate = DateTime.now().add(const Duration(days: 60));
-                isAvailable = date.isAfter(today.subtract(const Duration(days: 1))) && 
-                             date.isBefore(maxDate);
+                // Compare dates in local timezone
+                final localToday = DateTime(today.year, today.month, today.day);
+                final localDate = DateTime(date.year, date.month, date.day);
+                isAvailable = localDate.isAfter(localToday.subtract(const Duration(days: 1))) && 
+                             localDate.isBefore(maxDate);
               } else {
                 dayText = (index - previousMonthDays.length - daysInMonth + 1).toString();
                 isCurrentMonth = false;
@@ -486,8 +489,18 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
     );
   }
 
-  // lib/features/user/screens/book_appointment_screen.dart
+  // Update the _bookAppointment method to check for duplicates:
+
 Future<void> _bookAppointment(user) async {
+  // Check for duplicate appointment first
+  final isDuplicate = await _checkDuplicateAppointment(
+    widget.doctor['id'],
+    _selectedDate!,
+    _selectedSlot!,
+  );
+  
+  if (isDuplicate) return;
+
   setState(() {
     _isBooking = true;
   });
@@ -500,15 +513,20 @@ Future<void> _bookAppointment(user) async {
       throw Exception('Please login again. Token not found.');
     }
 
+    // Create date at midnight in local timezone
     final selectedDateTime = DateTime(
       _selectedDate!.year,
       _selectedDate!.month,
       _selectedDate!.day,
+      0, 0, 0, 0, 0
     );
+    
+    // Convert to UTC for storage
+    final utcDateTime = selectedDateTime.toUtc();
 
     final appointmentData = {
       'doctorId': widget.doctor['id'],
-      'date': selectedDateTime.toIso8601String(),
+      'date': utcDateTime.toIso8601String(),
       'time': _selectedSlot!,
       'type': 'consultation',
       'symptoms': 'General Consultation',
@@ -531,7 +549,6 @@ Future<void> _bookAppointment(user) async {
     if (response.statusCode == 200 || response.statusCode == 201) {
       final data = json.decode(response.body);
       if (data['success']) {
-        // Refresh appointments in the provider
         final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
         await appointmentProvider.loadAppointments();
         
@@ -568,5 +585,35 @@ Future<void> _bookAppointment(user) async {
       });
     }
   }
+}
+  // Add this method to check for duplicate appointments:
+
+Future<bool> _checkDuplicateAppointment(String doctorId, DateTime date, String time) async {
+  Provider.of<AuthProvider>(context, listen: false);
+  final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
+  
+  // Check if user already has an appointment at the same date and time
+  final existingAppointment = appointmentProvider.appointments.any((apt) {
+    final aptDate = DateTime(apt.date.year, apt.date.month, apt.date.day);
+    final selectedDate = DateTime(date.year, date.month, date.day);
+    return apt.doctorId == doctorId && 
+           aptDate.isAtSameMomentAs(selectedDate) && 
+           apt.time == time &&
+           apt.status != 'cancelled';
+  });
+  
+  if (existingAppointment) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You already have an appointment with this doctor at the same date and time!'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+    return true; // Duplicate found
+  }
+  return false; // No duplicate
 }
 }

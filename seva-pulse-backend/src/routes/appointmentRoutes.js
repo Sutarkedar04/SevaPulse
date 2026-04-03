@@ -6,7 +6,7 @@ const Doctor = require('../models/Doctor');
 const Patient = require('../models/Patient');
 
 // Get all appointments
-router.get('/', protect, async (req, res) => {
+router.get('/', protect, async (req, res, next) => {
   try {
     console.log('📋 Getting appointments for user:', req.user.id);
     
@@ -17,7 +17,6 @@ router.get('/', protect, async (req, res) => {
       if (patient) {
         query.patient = patient._id;
       } else {
-        // Create patient profile if missing
         const newPatient = await Patient.create({
           user: req.user.id,
           dateOfBirth: new Date('1990-01-01'),
@@ -68,16 +67,15 @@ router.get('/', protect, async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error in getAppointments:', error);
-    res.status(500).json({ success: false, message: error.message });
+    next(error); // Pass error to error handler
   }
 });
 
 // Create appointment
-router.post('/', protect, async (req, res) => {
+router.post('/', protect, async (req, res, next) => {
   try {
     console.log('📝 Creating appointment for user:', req.user.id);
     
-    // Find or create patient profile
     let patient = await Patient.findOne({ user: req.user.id });
     if (!patient) {
       patient = await Patient.create({
@@ -88,7 +86,6 @@ router.post('/', protect, async (req, res) => {
       console.log('✅ Created new patient profile for user:', req.user.id);
     }
     
-    // Find doctor
     const doctor = await Doctor.findById(req.body.doctorId).populate('user');
     if (!doctor) {
       return res.status(404).json({ success: false, message: 'Doctor not found' });
@@ -135,12 +132,12 @@ router.post('/', protect, async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error in createAppointment:', error);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
 // Update appointment status
-router.put('/:id', protect, async (req, res) => {
+router.put('/:id', protect, async (req, res, next) => {
   try {
     const { status } = req.body;
     const appointment = await Appointment.findByIdAndUpdate(
@@ -179,12 +176,12 @@ router.put('/:id', protect, async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error in updateAppointment:', error);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
 // Delete appointment
-router.delete('/:id', protect, async (req, res) => {
+router.delete('/:id', protect, async (req, res, next) => {
   try {
     const appointment = await Appointment.findByIdAndDelete(req.params.id);
     if (!appointment) {
@@ -193,7 +190,7 @@ router.delete('/:id', protect, async (req, res) => {
     res.status(200).json({ success: true, message: 'Appointment deleted' });
   } catch (error) {
     console.error('❌ Error in deleteAppointment:', error);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 });
 

@@ -19,6 +19,7 @@ dependencies:
   flutter_svg: ^2.0.9  # Add this line for SVG support
   image_picker: ^1.0.4  # Add this line
   connectivity_plus: ^5.0.0
+  url_launcher: ^6.2.0
 
 dev_dependencies:
   flutter_test:

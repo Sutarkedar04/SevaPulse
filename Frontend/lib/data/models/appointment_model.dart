@@ -32,42 +32,37 @@ class Appointment {
     this.specialty,
   });
 
-  factory Appointment.fromJson(Map<String, dynamic> json) {
-    print('🔍 Parsing appointment: ${json['id']}');
-    
-    return Appointment(
-      id: json['id']?.toString() ?? '',
-      patientId: json['patientId']?.toString() ?? '',
-      doctorId: json['doctorId']?.toString() ?? '',
-      patientName: json['patientName'] ?? 'Unknown',
-      doctorName: json['doctorName'] ?? 'Unknown',
-      date: json['date'] is DateTime 
-          ? json['date'] 
-          : DateTime.parse(json['date'] ?? DateTime.now().toIso8601String()),
-      time: json['time'] ?? '',
-      status: json['status'] ?? 'pending',
-      type: json['type'] ?? 'Consultation',
-      symptoms: json['symptoms'] ?? '',
-      prescription: json['prescription'],
-      notes: json['notes'],
-      patientEmail: json['patientEmail'],
-      specialty: json['specialty'] ?? 'General',
-    );
-  }
+  // lib/data/models/appointment_model.dart
+// Update the fromJson method to handle dates correctly
 
-  Map<String, dynamic> toJson() {
-    return {
-      'doctorId': doctorId,
-      'date': date.toIso8601String(),
-      'time': time,
-      'type': type,
-      'symptoms': symptoms,
-      'patientId': patientId,
-      'patientName': patientName,
-      'doctorName': doctorName,
-      'status': status,
-      'patientEmail': patientEmail,
-      'specialty': specialty,
-    };
+factory Appointment.fromJson(Map<String, dynamic> json) {
+  print('🔍 Parsing appointment: ${json['id']}');
+  
+  DateTime parseDate(dynamic dateValue) {
+    if (dateValue is DateTime) return dateValue;
+    
+    String dateString = dateValue.toString();
+    // Parse the date and convert to local timezone
+    DateTime utcDate = DateTime.parse(dateString);
+    // Convert to local timezone
+    return utcDate.toLocal();
   }
+  
+  return Appointment(
+    id: json['id']?.toString() ?? '',
+    patientId: json['patientId']?.toString() ?? '',
+    doctorId: json['doctorId']?.toString() ?? '',
+    patientName: json['patientName'] ?? 'Unknown',
+    doctorName: json['doctorName'] ?? 'Unknown',
+    date: parseDate(json['date']),
+    time: json['time'] ?? '',
+    status: json['status'] ?? 'pending',
+    type: json['type'] ?? 'Consultation',
+    symptoms: json['symptoms'] ?? '',
+    prescription: json['prescription'],
+    notes: json['notes'],
+    patientEmail: json['patientEmail'],
+    specialty: json['specialty'] ?? 'General',
+  );
+}
 }

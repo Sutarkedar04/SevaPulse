@@ -4,7 +4,7 @@ const Doctor = require('../models/Doctor');
 const Patient = require('../models/Patient');
 const User = require('../models/User');
 
-exports.getAppointments = async (req, res) => {
+exports.getAppointments = async (req, res, next) => {
   try {
     console.log('Getting appointments for user:', req.user.id);
     console.log('User role:', req.user.role);
@@ -13,7 +13,6 @@ exports.getAppointments = async (req, res) => {
     let userRole = req.user.role;
     
     if (userRole === 'patient') {
-      // Find patient profile for this user
       const patient = await Patient.findOne({ user: req.user.id });
       if (patient) {
         query = { patient: patient._id };
@@ -22,7 +21,6 @@ exports.getAppointments = async (req, res) => {
         return res.status(200).json({ success: true, count: 0, data: [] });
       }
     } else if (userRole === 'doctor') {
-      // Find doctor profile for this user
       const doctor = await Doctor.findOne({ user: req.user.id });
       if (doctor) {
         query = { doctor: doctor._id };
@@ -47,9 +45,7 @@ exports.getAppointments = async (req, res) => {
     
     const formattedAppointments = appointments.map(apt => ({
       id: apt._id,
-      // CRITICAL: Return the USER ID for patient, not the patient collection ID
       patientId: apt.patient?.user?._id?.toString(),
-      // CRITICAL: Return the USER ID for doctor, not the doctor collection ID  
       doctorId: apt.doctor?.user?._id?.toString(),
       patientName: apt.patient?.user?.name || 'Unknown',
       doctorName: apt.doctor?.user?.name || 'Unknown',
@@ -64,10 +60,6 @@ exports.getAppointments = async (req, res) => {
     }));
     
     console.log('Returning appointments count:', formattedAppointments.length);
-    if (formattedAppointments.length > 0) {
-      console.log('First appointment doctor ID:', formattedAppointments[0].doctorId);
-      console.log('First appointment patient ID:', formattedAppointments[0].patientId);
-    }
     
     res.status(200).json({ 
       success: true, 
@@ -76,16 +68,15 @@ exports.getAppointments = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in getAppointments:', error);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
-exports.createAppointment = async (req, res) => {
+exports.createAppointment = async (req, res, next) => {
   try {
     console.log('Creating appointment for user:', req.user.id);
     console.log('Request body:', req.body);
     
-    // Find patient profile for this user
     let patient = await Patient.findOne({ user: req.user.id });
     
     if (!patient) {
@@ -97,11 +88,9 @@ exports.createAppointment = async (req, res) => {
       console.log('Created new patient profile:', patient._id);
     }
     
-    // Find doctor by USER ID (not doctor collection ID)
     let doctor = await Doctor.findOne({ user: req.body.doctorId });
     
     if (!doctor) {
-      // If not found by user ID, try by doctor collection ID
       doctor = await Doctor.findById(req.body.doctorId);
     }
     
@@ -113,8 +102,8 @@ exports.createAppointment = async (req, res) => {
     console.log('Doctor user ID:', doctor.user);
     
     const appointmentData = {
-      doctor: doctor._id, // Store doctor collection ID
-      patient: patient._id, // Store patient collection ID
+      doctor: doctor._id,
+      patient: patient._id,
       date: new Date(req.body.date),
       timeSlot: { start: req.body.time },
       status: 'pending',
@@ -126,7 +115,6 @@ exports.createAppointment = async (req, res) => {
     const appointment = await Appointment.create(appointmentData);
     console.log('Appointment created with ID:', appointment._id);
     
-    // Populate the appointment
     const populatedAppointment = await Appointment.findById(appointment._id)
       .populate({
         path: 'doctor',
@@ -137,7 +125,6 @@ exports.createAppointment = async (req, res) => {
         populate: { path: 'user', select: 'name email' }
       });
     
-    // Return with USER IDs, not collection IDs
     res.status(201).json({ 
       success: true, 
       data: {
@@ -157,6 +144,6 @@ exports.createAppointment = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in createAppointment:', error);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };

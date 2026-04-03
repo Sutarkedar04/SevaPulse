@@ -1,12 +1,10 @@
 const express = require('express');
 const router = express.Router();
+const { protect } = require('../middleware/auth');
+const { getBills, createBill, payBill } = require('../controllers/billController');
 
-router.get('/', (req, res) => {
-  res.json({ success: true, data: [] });
-});
-
-router.post('/', (req, res) => {
-  res.json({ success: true, message: 'Bill created' });
-});
+router.get('/', protect, getBills);
+router.post('/', protect, createBill);
+router.put('/:id/pay', protect, payBill);
 
 module.exports = router;

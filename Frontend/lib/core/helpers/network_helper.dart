@@ -3,23 +3,22 @@ import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 class NetworkHelper {
-  // Check if server is reachable
   static Future<bool> isServerReachable(String ip, int port) async {
     try {
-      final result = await InternetAddress.lookup(ip);
-      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-        final socket = await Socket.connect(ip, port, timeout: Duration(seconds: 3));
-        socket.destroy();
-        return true;
-      }
+      print('🔌 Testing connection to $ip:$port...');
+      final socket = await Socket.connect(ip, port, timeout: Duration(seconds: 5));
+      socket.destroy();
+      print('✅ Successfully connected to $ip:$port');
+      return true;
+    } on SocketException catch (e) {
+      print('❌ Cannot connect to $ip:$port: ${e.message}');
       return false;
     } catch (e) {
-      print('Server not reachable: $e');
+      print('❌ Error connecting to $ip:$port: $e');
       return false;
     }
   }
 
-  // Get local IP address of the device
   static Future<String> getLocalIpAddress() async {
     try {
       for (var interface in await NetworkInterface.list()) {
@@ -27,7 +26,7 @@ class NetworkHelper {
           if (addr.type == InternetAddressType.IPv4 && 
               !addr.address.startsWith('127.') &&
               !addr.address.startsWith('169.254')) {
-            print('Found device IP: ${addr.address}');
+            print('📱 Found device IP: ${addr.address}');
             return addr.address;
           }
         }
@@ -35,16 +34,16 @@ class NetworkHelper {
     } catch (e) {
       print('Error getting IP: $e');
     }
-    return '192.168.29.63'; // Fallback
+    return '192.168.56.1';
   }
 
-  // Check internet connectivity
   static Future<bool> hasInternetConnection() async {
     final connectivityResult = await Connectivity().checkConnectivity();
-    return connectivityResult != ConnectivityResult.none;
+    final hasConnection = connectivityResult != ConnectivityResult.none;
+    print('📶 Internet connection: $hasConnection');
+    return hasConnection;
   }
 
-  // Get current connection type
   static Future<String> getConnectionType() async {
     final connectivityResult = await Connectivity().checkConnectivity();
     switch (connectivityResult) {
@@ -56,22 +55,6 @@ class NetworkHelper {
         return 'Ethernet';
       default:
         return 'No Connection';
-    }
-  }
-
-  // Test if a specific URL is reachable
-  static Future<bool> testUrl(String url) async {
-    try {
-      final uri = Uri.parse(url);
-      final client = HttpClient();
-      client.connectionTimeout = Duration(seconds: 2);
-      final request = await client.getUrl(uri);
-      final response = await request.close();
-      client.close();
-      return response.statusCode == 200;
-    } catch (e) {
-      print('URL test failed for $url: $e');
-      return false;
     }
   }
 }

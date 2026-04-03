@@ -8,30 +8,32 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true, select: false },
   role: { type: String, enum: ['admin', 'doctor', 'patient', 'staff'], default: 'patient' },
   phone: { type: String, required: true },
-  address: { street: String, city: String, state: String, zipCode: String },
+  address: {
+    street: String,
+    city: String,
+    state: String,
+    zipCode: String
+  },
   profilePicture: { type: String, default: '' },
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
 
-// Hash password before saving - with proper error handling
-userSchema.pre('save', async function(next) {
-  const user = this;
-  
+// Hash password before saving - FIXED VERSION
+userSchema.pre('save', async function() {
   // Only hash the password if it has been modified (or is new)
-  if (!user.isModified('password')) {
-    return next();
+  if (!this.isModified('password')) {
+    return;
   }
   
   try {
     // Generate salt and hash password
     const salt = await bcrypt.genSalt(10);
-    const hash = await bcrypt.hash(user.password, salt);
-    user.password = hash;
-    next();
+    const hash = await bcrypt.hash(this.password, salt);
+    this.password = hash;
   } catch (error) {
     console.error('Password hashing error:', error);
-    next(error);
+    throw new Error('Error hashing password: ' + error.message);
   }
 });
 

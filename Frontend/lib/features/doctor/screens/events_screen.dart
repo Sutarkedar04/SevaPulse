@@ -1,29 +1,230 @@
+// lib/features/doctor/screens/events_screen.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import '../../../core/constants/api_constants.dart';
+import '../../../data/providers/auth_provider.dart';
 
 class EventsScreen extends StatefulWidget {
-  final List<Map<String, dynamic>> medicalEvents;
-  final VoidCallback onCreateEventPressed;
-
-  const EventsScreen({
-    Key? key,
-    required this.medicalEvents,
-    required this.onCreateEventPressed,
-  }) : super(key: key);
+  const EventsScreen({Key? key}) : super(key: key);
 
   @override
   State<EventsScreen> createState() => _EventsScreenState();
 }
 
 class _EventsScreenState extends State<EventsScreen> {
-  late List<Map<String, dynamic>> _events;
-  String _filterType = 'all'; // 'all', 'upcoming', 'past'
+  List<Map<String, dynamic>> _events = [];
+  bool _isLoading = true;
+  String? _error;
+  String _filterType = 'all';
   String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
-    _events = List.from(widget.medicalEvents);
+    _fetchEvents();
+  }
+
+  Future<void> _fetchEvents() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+
+      if (token == null || token.isEmpty) {
+        setState(() {
+          _error = 'Please login to view events';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      print('📡 Fetching health camps from: ${ApiConstants.healthCamps}');
+
+      final response = await http.get(
+        Uri.parse(ApiConstants.healthCamps),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] && data['data'] != null) {
+          setState(() {
+            _events = List<Map<String, dynamic>>.from(data['data']);
+            _isLoading = false;
+          });
+          print('✅ Loaded ${_events.length} events');
+        } else {
+          setState(() {
+            _error = data['message'] ?? 'No events found';
+            _isLoading = false;
+          });
+        }
+      } else {
+        setState(() {
+          _error = 'Failed to load events';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching events: $e');
+      setState(() {
+        _error = 'Error: ${e.toString()}';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _createEvent(Map<String, dynamic> newEvent) async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+
+      if (token == null || token.isEmpty) {
+        throw Exception('Please login to create event');
+      }
+
+      print('📝 Creating health camp: $newEvent');
+
+      final response = await http.post(
+        Uri.parse(ApiConstants.healthCamps),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode(newEvent),
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          await _fetchEvents(); // Refresh the list
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Event created successfully!'),
+              backgroundColor: Color(0xFF27ae60),
+            ),
+          );
+        } else {
+          throw Exception(data['message'] ?? 'Failed to create event');
+        }
+      } else {
+        final data = json.decode(response.body);
+        throw Exception(data['message'] ?? 'Failed to create event');
+      }
+    } catch (e) {
+      print('Error creating event: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString().replaceFirst('Exception: ', '')}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _updateEvent(String id, Map<String, dynamic> updatedEvent) async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+
+      if (token == null || token.isEmpty) {
+        throw Exception('Please login to update event');
+      }
+
+      print('📝 Updating health camp: $id');
+
+      final response = await http.put(
+        Uri.parse('${ApiConstants.healthCamps}/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode(updatedEvent),
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          await _fetchEvents(); // Refresh the list
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Event updated successfully!'),
+              backgroundColor: Color(0xFF27ae60),
+            ),
+          );
+        } else {
+          throw Exception(data['message'] ?? 'Failed to update event');
+        }
+      } else {
+        final data = json.decode(response.body);
+        throw Exception(data['message'] ?? 'Failed to update event');
+      }
+    } catch (e) {
+      print('Error updating event: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString().replaceFirst('Exception: ', '')}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteEvent(String id) async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+
+      if (token == null || token.isEmpty) {
+        throw Exception('Please login to delete event');
+      }
+
+      print('🗑️ Deleting health camp: $id');
+
+      final response = await http.delete(
+        Uri.parse('${ApiConstants.healthCamps}/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          await _fetchEvents(); // Refresh the list
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Event deleted successfully'),
+              backgroundColor: Color(0xFF27ae60),
+            ),
+          );
+        } else {
+          throw Exception(data['message'] ?? 'Failed to delete event');
+        }
+      } else {
+        final data = json.decode(response.body);
+        throw Exception(data['message'] ?? 'Failed to delete event');
+      }
+    } catch (e) {
+      print('Error deleting event: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString().replaceFirst('Exception: ', '')}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   List<Map<String, dynamic>> get _filteredEvents {
@@ -48,7 +249,6 @@ class _EventsScreenState extends State<EventsScreen> {
       return matchesSearch;
     }).toList();
 
-    // Sort by date (upcoming first)
     filtered.sort((a, b) {
       final dateA = DateTime.tryParse(a['date'] ?? '');
       final dateB = DateTime.tryParse(b['date'] ?? '');
@@ -64,20 +264,8 @@ class _EventsScreenState extends State<EventsScreen> {
     showDialog(
       context: context,
       builder: (context) => EventDialog(
-        onSave: (newEvent) {
-          setState(() {
-            _events.add({
-              ...newEvent,
-              'id': DateTime.now().millisecondsSinceEpoch,
-              'registeredPatients': 0,
-            });
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Event created successfully!'),
-              backgroundColor: Color(0xFF27ae60),
-            ),
-          );
+        onSave: (newEvent) async {
+          await _createEvent(newEvent);
         },
       ),
     );
@@ -88,28 +276,14 @@ class _EventsScreenState extends State<EventsScreen> {
       context: context,
       builder: (context) => EventDialog(
         event: event,
-        onSave: (updatedEvent) {
-          setState(() {
-            final index = _events.indexWhere((e) => e['id'] == event['id']);
-            if (index != -1) {
-              _events[index] = {
-                ..._events[index],
-                ...updatedEvent,
-              };
-            }
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Event updated successfully!'),
-              backgroundColor: Color(0xFF27ae60),
-            ),
-          );
+        onSave: (updatedEvent) async {
+          await _updateEvent(event['_id'], updatedEvent);
         },
       ),
     );
   }
 
-  void _deleteEvent(Map<String, dynamic> event) {
+  void _deleteEventConfirm(Map<String, dynamic> event) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -122,16 +296,8 @@ class _EventsScreenState extends State<EventsScreen> {
           ),
           TextButton(
             onPressed: () {
-              setState(() {
-                _events.removeWhere((e) => e['id'] == event['id']);
-              });
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Event deleted successfully'),
-                  backgroundColor: Color(0xFFe74c3c),
-                ),
-              );
+              _deleteEvent(event['_id']);
             },
             style: TextButton.styleFrom(
               foregroundColor: const Color(0xFFe74c3c),
@@ -146,38 +312,8 @@ class _EventsScreenState extends State<EventsScreen> {
   void _sendReminder(Map<String, dynamic> event) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Reminders sent to ${event['registeredPatients']} registered patients'),
+        content: Text('Reminders sent to ${event['registeredParticipants']} registered patients'),
         backgroundColor: const Color(0xFF27ae60),
-      ),
-    );
-  }
-
-  void _viewRegistrations(Map<String, dynamic> event) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Registrations - ${event['title']}'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: event['registeredPatients'] ?? 0,
-            itemBuilder: (context, index) => ListTile(
-              leading: CircleAvatar(
-                backgroundColor: const Color(0xFF3498db).withValues(alpha: 0.1),
-                child: const Icon(Icons.person, color: Color(0xFF3498db)),
-              ),
-              title: Text('Patient ${index + 1}'),
-              subtitle: Text('Registered on ${DateFormat('MMM dd, yyyy').format(DateTime.now())}'),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
       ),
     );
   }
@@ -192,128 +328,145 @@ class _EventsScreenState extends State<EventsScreen> {
         foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),
-      body: Column(
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: Colors.white,
-            child: Column(
-              children: [
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_outline, size: 64, color: Colors.red),
+                      const SizedBox(height: 16),
+                      Text(_error!),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _fetchEvents,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                )
+              : Column(
                   children: [
-                    Text(
-                      'Medical Events & Camps',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2c3e50),
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      color: Colors.white,
+                      child: Column(
+                        children: [
+                          const Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Medical Events & Camps',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2c3e50),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          
+                          // Search Bar
+                          TextField(
+                            decoration: InputDecoration(
+                              hintText: 'Search events...',
+                              prefixIcon: const Icon(Icons.search, color: Color(0xFF7f8c8d)),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide.none,
+                              ),
+                              filled: true,
+                              fillColor: const Color(0xFFecf0f1),
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                _searchQuery = value;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          
+                          // Filter Chips
+                          Row(
+                            children: [
+                              FilterChip(
+                                label: const Text('All Events'),
+                                selected: _filterType == 'all',
+                                onSelected: (selected) {
+                                  setState(() {
+                                    _filterType = selected ? 'all' : _filterType;
+                                  });
+                                },
+                                selectedColor: const Color(0xFF3498db),
+                                checkmarkColor: Colors.white,
+                              ),
+                              const SizedBox(width: 8),
+                              FilterChip(
+                                label: const Text('Upcoming'),
+                                selected: _filterType == 'upcoming',
+                                onSelected: (selected) {
+                                  setState(() {
+                                    _filterType = selected ? 'upcoming' : _filterType;
+                                  });
+                                },
+                                selectedColor: const Color(0xFF27ae60),
+                                checkmarkColor: Colors.white,
+                              ),
+                              const SizedBox(width: 8),
+                              FilterChip(
+                                label: const Text('Past'),
+                                selected: _filterType == 'past',
+                                onSelected: (selected) {
+                                  setState(() {
+                                    _filterType = selected ? 'past' : _filterType;
+                                  });
+                                },
+                                selectedColor: const Color(0xFFe67e22),
+                                checkmarkColor: Colors.white,
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                    
-                  ],
-                ),
-                const SizedBox(height: 16),
-                
-                // Search Bar
-                TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Search events...',
-                    prefixIcon: const Icon(Icons.search, color: Color(0xFF7f8c8d)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
+
+                    // Stats Cards
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      color: const Color(0xFFf8f9fa),
+                      child: Row(
+                        children: [
+                          _buildStatCard('Total Events', _events.length, const Color(0xFF3498db)),
+                          const SizedBox(width: 12),
+                          _buildStatCard('Upcoming', 
+                            _events.where((e) {
+                              final date = DateTime.tryParse(e['date'] ?? '');
+                              return date != null && date.isAfter(DateTime.now());
+                            }).length, 
+                            const Color(0xFF27ae60)),
+                          const SizedBox(width: 12),
+                          _buildStatCard('Total Registrations', 
+                            _events.fold<int>(0, (sum, event) => sum + ((event['registeredParticipants'] as int?) ?? 0)),
+                            const Color(0xFFe67e22)),
+                        ],
+                      ),
                     ),
-                    filled: true,
-                    fillColor: const Color(0xFFecf0f1),
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 12),
-                
-                // Filter Chips
-                Row(
-                  children: [
-                    FilterChip(
-                      label: const Text('All Events'),
-                      selected: _filterType == 'all',
-                      onSelected: (selected) {
-                        setState(() {
-                          _filterType = selected ? 'all' : _filterType;
-                        });
-                      },
-                      selectedColor: const Color(0xFF3498db),
-                      checkmarkColor: Colors.white,
-                    ),
-                    const SizedBox(width: 8),
-                    FilterChip(
-                      label: const Text('Upcoming'),
-                      selected: _filterType == 'upcoming',
-                      onSelected: (selected) {
-                        setState(() {
-                          _filterType = selected ? 'upcoming' : _filterType;
-                        });
-                      },
-                      selectedColor: const Color(0xFF27ae60),
-                      checkmarkColor: Colors.white,
-                    ),
-                    const SizedBox(width: 8),
-                    FilterChip(
-                      label: const Text('Past'),
-                      selected: _filterType == 'past',
-                      onSelected: (selected) {
-                        setState(() {
-                          _filterType = selected ? 'past' : _filterType;
-                        });
-                      },
-                      selectedColor: const Color(0xFFe67e22),
-                      checkmarkColor: Colors.white,
+
+                    // Events List
+                    Expanded(
+                      child: _filteredEvents.isEmpty
+                          ? _buildEmptyState()
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: _filteredEvents.length,
+                              itemBuilder: (context, index) => _buildEventCard(_filteredEvents[index]),
+                            ),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-
-          // Stats Cards
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: const Color(0xFFf8f9fa),
-            child: Row(
-              children: [
-                _buildStatCard('Total Events', _events.length, const Color(0xFF3498db)),
-                const SizedBox(width: 12),
-                _buildStatCard('Upcoming', 
-                  _events.where((e) {
-                    final date = DateTime.tryParse(e['date'] ?? '');
-                    return date != null && date.isAfter(DateTime.now());
-                  }).length, 
-                  const Color(0xFF27ae60)),
-                const SizedBox(width: 12),
-                _buildStatCard('Total Registrations', 
-                  _events.fold<int>(0, (sum, event) => sum + (event['registeredPatients'] ?? 0) as int),
-                  const Color(0xFFe67e22)),
-              ],
-            ),
-          ),
-
-          // Events List
-          Expanded(
-            child: _filteredEvents.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _filteredEvents.length,
-                    itemBuilder: (context, index) => _buildEventCard(_filteredEvents[index]),
-                  ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -322,9 +475,9 @@ class _EventsScreenState extends State<EventsScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
+          color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
+          border: Border.all(color: color.withOpacity(0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -390,7 +543,7 @@ class _EventsScreenState extends State<EventsScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFe74c3c).withValues(alpha: 0.1),
+                          color: const Color(0xFFe74c3c).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Text(
@@ -406,7 +559,7 @@ class _EventsScreenState extends State<EventsScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF7f8c8d).withValues(alpha: 0.1),
+                          color: const Color(0xFF7f8c8d).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Text(
@@ -422,7 +575,7 @@ class _EventsScreenState extends State<EventsScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF27ae60).withValues(alpha: 0.1),
+                          color: const Color(0xFF27ae60).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Text(
@@ -438,11 +591,11 @@ class _EventsScreenState extends State<EventsScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF3498db).withValues(alpha: 0.1),
+                        color: const Color(0xFF3498db).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        '${event['registeredPatients'] ?? 0} Registered',
+                        '${event['registeredParticipants'] ?? 0} Registered',
                         style: const TextStyle(
                           color: Color(0xFF3498db),
                           fontSize: 12,
@@ -485,14 +638,6 @@ class _EventsScreenState extends State<EventsScreen> {
                     ),
                     child: const Text('Send Reminder'),
                   ),
-                  ElevatedButton(
-                    onPressed: () => _viewRegistrations(event),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFe67e22),
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('View Registrations'),
-                  ),
                 ],
                 Row(
                   children: [
@@ -502,7 +647,7 @@ class _EventsScreenState extends State<EventsScreen> {
                       tooltip: 'Edit Event',
                     ),
                     IconButton(
-                      onPressed: () => _deleteEvent(event),
+                      onPressed: () => _deleteEventConfirm(event),
                       icon: const Icon(Icons.delete, color: Color(0xFFe74c3c)),
                       tooltip: 'Delete Event',
                     ),
@@ -553,12 +698,12 @@ class _EventsScreenState extends State<EventsScreen> {
           Icon(
             Icons.event,
             size: 80,
-            color: const Color(0xFFbdc3c7).withValues(alpha: 0.5),
+            color: const Color(0xFFbdc3c7).withOpacity(0.5),
           ),
           const SizedBox(height: 16),
-          Text(
-            _searchQuery.isEmpty ? 'No Events Created' : 'No Events Found',
-            style: const TextStyle(
+          const Text(
+            'No Events Created',
+            style: TextStyle(
               fontSize: 18,
               color: Color(0xFF7f8c8d),
             ),
@@ -567,9 +712,7 @@ class _EventsScreenState extends State<EventsScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 48),
             child: Text(
-              _searchQuery.isEmpty
-                  ? 'Create your first medical event or health camp to get started.'
-                  : 'No events found for "$_searchQuery". Try a different search term.',
+              'Create your first medical event or health camp to get started.',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Color(0xFF95a5a6),
@@ -611,8 +754,13 @@ class _EventDialogState extends State<EventDialog> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _locationController = TextEditingController();
+  final _servicesController = TextEditingController();
+  final _contactController = TextEditingController();
+  final _slotsController = TextEditingController();
+  final _feeController = TextEditingController();
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
+  bool _isFree = true;
 
   @override
   void initState() {
@@ -621,8 +769,14 @@ class _EventDialogState extends State<EventDialog> {
       _titleController.text = widget.event!['title'] ?? '';
       _descriptionController.text = widget.event!['description'] ?? '';
       _locationController.text = widget.event!['location'] ?? '';
+      _servicesController.text = (widget.event!['services'] as List? ?? []).join(', ');
+      _contactController.text = widget.event!['contact'] ?? '';
+      _slotsController.text = (widget.event!['availableSlots'] ?? 100).toString();
       _selectedDate = DateTime.tryParse(widget.event!['date'] ?? '');
-      // Parse time if available
+      _isFree = widget.event!['isFree'] ?? true;
+      if (!_isFree && widget.event!['fee'] != null) {
+        _feeController.text = widget.event!['fee'].toString();
+      }
     }
   }
 
@@ -631,13 +785,17 @@ class _EventDialogState extends State<EventDialog> {
     _titleController.dispose();
     _descriptionController.dispose();
     _locationController.dispose();
+    _servicesController.dispose();
+    _contactController.dispose();
+    _slotsController.dispose();
+    _feeController.dispose();
     super.dispose();
   }
 
   Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
+      initialDate: _selectedDate ?? DateTime.now().add(const Duration(days: 7)),
       firstDate: DateTime.now(),
       lastDate: DateTime(2100),
     );
@@ -662,13 +820,29 @@ class _EventDialogState extends State<EventDialog> {
 
   void _saveEvent() {
     if (_formKey.currentState!.validate()) {
+      final services = _servicesController.text
+          .split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
+      
       final event = {
         'title': _titleController.text,
         'description': _descriptionController.text,
         'location': _locationController.text,
-        'date': _selectedDate != null ? DateFormat('yyyy-MM-dd').format(_selectedDate!) : '',
-        'time': _selectedTime != null ? _selectedTime!.format(context) : '',
+        'date': _selectedDate != null ? _selectedDate!.toIso8601String() : DateTime.now().toIso8601String(),
+        'time': _selectedTime != null ? _selectedTime!.format(context) : '9:00 AM - 5:00 PM',
+        'services': services,
+        'contact': _contactController.text,
+        'availableSlots': int.parse(_slotsController.text),
+        'isFree': _isFree,
+        'organization': 'Seva Pulse Hospital',
       };
+      
+      if (!_isFree && _feeController.text.isNotEmpty) {
+        event['fee'] = int.parse(_feeController.text);
+      }
+      
       widget.onSave(event);
       Navigator.pop(context);
     }
@@ -702,11 +876,17 @@ class _EventDialogState extends State<EventDialog> {
               TextFormField(
                 controller: _descriptionController,
                 decoration: const InputDecoration(
-                  labelText: 'Description',
+                  labelText: 'Description *',
                   border: OutlineInputBorder(),
                   hintText: 'Describe the event purpose and activities...',
                 ),
                 maxLines: 3,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter description';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -768,6 +948,91 @@ class _EventDialogState extends State<EventDialog> {
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _servicesController,
+                decoration: const InputDecoration(
+                  labelText: 'Services (comma separated) *',
+                  border: OutlineInputBorder(),
+                  hintText: 'e.g., ECG, BP Check, Blood Test',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter at least one service';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _contactController,
+                decoration: const InputDecoration(
+                  labelText: 'Contact Number *',
+                  border: OutlineInputBorder(),
+                  hintText: 'e.g., +91-9876543210',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter contact number';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _slotsController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Available Slots *',
+                  border: OutlineInputBorder(),
+                  hintText: 'e.g., 100',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter available slots';
+                  }
+                  if (int.tryParse(value) == null) {
+                    return 'Please enter a valid number';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Text('Is this camp free?'),
+                  const SizedBox(width: 16),
+                  Switch(
+                    value: _isFree,
+                    onChanged: (value) {
+                      setState(() {
+                        _isFree = value;
+                      });
+                    },
+                    activeColor: const Color(0xFF27ae60),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(_isFree ? 'FREE' : 'PAID'),
+                ],
+              ),
+              if (!_isFree) ...[
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _feeController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Fee (in ₹) *',
+                    border: OutlineInputBorder(),
+                    hintText: 'e.g., 500',
+                  ),
+                  validator: (value) {
+                    if (!_isFree && (value == null || value.isEmpty)) {
+                      return 'Please enter fee amount';
+                    }
+                    return null;
+                  },
+                ),
+              ],
             ],
           ),
         ),
@@ -788,5 +1053,3 @@ class _EventDialogState extends State<EventDialog> {
     );
   }
 }
-
-// Add DateFormat import at the top

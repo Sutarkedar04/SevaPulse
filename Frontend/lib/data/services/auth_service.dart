@@ -19,8 +19,8 @@ class AuthService {
 
   Future<Map<String, dynamic>> login(String email, String password, String userType) async {
     try {
-      print('Attempting login to: ${ApiConstants.login}');
-      print('With email: $email, userType: $userType');
+      print('🔐 Attempting login to: ${ApiConstants.login}');
+      print('📧 With email: $email, userType: $userType');
       
       final response = await http.post(
         Uri.parse(ApiConstants.login),
@@ -43,57 +43,83 @@ class AuthService {
         throw Exception(data['message'] ?? 'Login failed');
       }
     } catch (e) {
-      print('Login error: $e');
+      print('❌ Login error: $e');
       rethrow;
     }
   }
 
-  Future<User> register(Map<String, dynamic> userData, String password) async {
-    try {
-      final response = await http.post(
-        Uri.parse(ApiConstants.register),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          ...userData,
-          'password': password,
-        }),
-      ).timeout(const Duration(seconds: 10));
+  // lib/core/services/auth_service.dart
+// Replace the register method with this:
 
-      final data = await _handleResponse(response);
-      
+Future<Map<String, dynamic>> register(Map<String, dynamic> userData, String password) async {
+  try {
+    print('📝 Attempting registration to: ${ApiConstants.register}');
+    print('📝 User data: $userData');
+    
+    final response = await http.post(
+      Uri.parse(ApiConstants.register),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        ...userData,
+        'password': password,
+      }),
+    ).timeout(const Duration(seconds: 10));
+
+    final data = json.decode(response.body);
+    print('📝 Response status: ${response.statusCode}');
+    print('📝 Response body: ${response.body}');
+    
+    if (response.statusCode == 200 || response.statusCode == 201) {
       if (data['success'] && data['user'] != null) {
-        return User.fromJson(data['user']);
+        // Return both user and token
+        return {
+          'user': User.fromJson(data['user']),
+          'token': data['token'], // Make sure token is included
+        };
       } else {
         throw Exception(data['message'] ?? 'Registration failed');
       }
-    } catch (e) {
-      print('Registration error: $e');
-      rethrow;
+    } else {
+      throw Exception(data['message'] ?? 'Registration failed with status ${response.statusCode}');
     }
+  } catch (e) {
+    print('❌ Registration error: $e');
+    rethrow;
   }
-
+}
   Future<User> getProfile(String token) async {
-    try {
-      final response = await http.get(
-        Uri.parse(ApiConstants.getProfile),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      ).timeout(const Duration(seconds: 10));
+  try {
+    print('📡 Fetching profile with token: ${token.substring(0, 20)}...');
+    
+    final response = await http.get(
+      Uri.parse(ApiConstants.getProfile),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    ).timeout(const Duration(seconds: 10));
 
-      final data = await _handleResponse(response);
-      
-      if (data['success'] && data['data'] != null && data['data']['user'] != null) {
+    final data = json.decode(response.body);
+    print('📡 Profile response status: ${response.statusCode}');
+    
+    if (response.statusCode == 200 && data['success']) {
+      // Handle different response structures
+      if (data['data'] != null && data['data']['user'] != null) {
         return User.fromJson(data['data']['user']);
+      } else if (data['user'] != null) {
+        return User.fromJson(data['user']);
       } else {
-        throw Exception(data['message'] ?? 'Failed to load profile');
+        throw Exception('Invalid profile response structure');
       }
-    } catch (e) {
-      print('GetProfile error: $e');
-      rethrow;
+    } else {
+      throw Exception(data['message'] ?? 'Failed to load profile');
     }
+  } catch (e) {
+    print('❌ GetProfile error: $e');
+    rethrow;
   }
+}
+
 
   Future<void> logout() async {
     await Future.delayed(const Duration(milliseconds: 500));

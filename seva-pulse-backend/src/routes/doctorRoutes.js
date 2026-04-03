@@ -3,7 +3,7 @@ const router = express.Router();
 const { protect } = require('../middleware/auth');
 const Doctor = require('../models/Doctor');
 
-router.get('/', protect, async (req, res) => {
+router.get('/', protect, async (req, res, next) => {
   try {
     console.log('👨‍⚕️ Fetching doctors for user:', req.user.id);
     
@@ -37,11 +37,11 @@ router.get('/', protect, async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error in getDoctors:', error);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
-router.get('/:id', protect, async (req, res) => {
+router.get('/:id', protect, async (req, res, next) => {
   try {
     const doctor = await Doctor.findById(req.params.id)
       .populate('user', 'name email phone profilePicture address');
@@ -53,7 +53,7 @@ router.get('/:id', protect, async (req, res) => {
     res.status(200).json({ success: true, data: doctor });
   } catch (error) {
     console.error('❌ Error in getDoctor:', error);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
