@@ -6,7 +6,7 @@ class NetworkHelper {
   static Future<bool> isServerReachable(String ip, int port) async {
     try {
       print('🔌 Testing connection to $ip:$port...');
-      final socket = await Socket.connect(ip, port, timeout: Duration(seconds: 5));
+      final socket = await Socket.connect(ip, port, timeout: const Duration(seconds: 5));
       socket.destroy();
       print('✅ Successfully connected to $ip:$port');
       return true;

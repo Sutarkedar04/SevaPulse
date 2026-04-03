@@ -1,8 +1,8 @@
 // lib/core/services/appointment_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../core/constants/api_constants.dart';
-import '../models/appointment_model.dart';
+import '../constants/api_constants.dart';
+import '../../data/models/appointment_model.dart';
 
 class AppointmentService {
   String? _token;

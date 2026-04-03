@@ -1,6 +1,6 @@
 // lib/core/constants/api_constants.dart
 class ApiConstants {
-  // Use the IP from your backend output: 10.166.178.191
+  // Use the IP from your backend output
   static const String baseUrl = 'http://10.166.178.191:5000/api';
   
   // Auth endpoints
@@ -35,4 +35,8 @@ class ApiConstants {
   
   // Canteen
   static const String canteenMenu = '$baseUrl/canteen/menu';
+  
+  // Timeouts
+  static const Duration connectionTimeout = Duration(seconds: 30);
+  static const Duration receiveTimeout = Duration(seconds: 30);
 }

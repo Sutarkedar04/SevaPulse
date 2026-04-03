@@ -1,7 +1,7 @@
 // lib/core/services/patient_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../core/constants/api_constants.dart';
+import '../constants/api_constants.dart';
 
 class PatientService {
   String? _token;

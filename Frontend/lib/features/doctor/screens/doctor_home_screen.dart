@@ -5,7 +5,7 @@ import 'package:seva_pulse/features/auth/SevaPulseSplashScreen.dart';
 import 'patients_screen.dart';
 import 'events_screen.dart';
 import 'profile_screen.dart';
-import '../../../data/services/appointment_service.dart';
+import '../../../core/services/appointment_service.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/models/user_model.dart';
 

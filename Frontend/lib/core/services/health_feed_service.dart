@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../core/constants/api_constants.dart';
+import '../constants/api_constants.dart';
 
-class CanteenService {
+class HealthFeedService {
   String? _token;
 
   void setToken(String token) {
@@ -26,15 +26,29 @@ class CanteenService {
     };
   }
 
-  Future<List<Map<String, dynamic>>> getCanteenMenu() async {
+  Future<List<Map<String, dynamic>>> getHealthCamps() async {
     try {
       final response = await http.get(
-        Uri.parse(ApiConstants.canteenMenu),
+        Uri.parse(ApiConstants.healthCamps),
         headers: _getHeaders(),
       ).timeout(const Duration(seconds: 30));
 
       final data = await _handleResponse(response);
       return List<Map<String, dynamic>>.from(data['data'] ?? []);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> registerForCamp(String campId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConstants.registerCamp}/$campId/register'),
+        headers: _getHeaders(),
+      ).timeout(const Duration(seconds: 30));
+
+      final data = await _handleResponse(response);
+      return data;
     } catch (e) {
       rethrow;
     }

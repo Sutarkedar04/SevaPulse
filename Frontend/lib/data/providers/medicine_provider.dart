@@ -1,6 +1,6 @@
 // lib/data/providers/medicine_provider.dart
 import 'package:flutter/foundation.dart';
-import '../../data/services/medicine_service.dart';
+import '../../core/services/medicine_service.dart';
 
 class MedicineProvider with ChangeNotifier {
   List<Map<String, dynamic>> _medicines = [];

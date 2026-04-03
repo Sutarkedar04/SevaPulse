@@ -1,7 +1,7 @@
 // lib/data/providers/appointment_provider.dart
 import 'package:flutter/foundation.dart';
 import '../models/appointment_model.dart';
-import '../services/appointment_service.dart';
+import '../../core/services/appointment_service.dart';
 
 class AppointmentProvider with ChangeNotifier {
   List<Appointment> _appointments = [];
