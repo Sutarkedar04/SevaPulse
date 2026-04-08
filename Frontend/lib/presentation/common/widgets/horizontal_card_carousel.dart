@@ -214,12 +214,14 @@ class _HorizontalCardCarouselState extends State<HorizontalCardCarousel> {
             end: Alignment.bottomRight,
             colors: [
               color,
+              // ignore: deprecated_member_use
               color.withOpacity(0.85),
             ],
           ),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
+              // ignore: deprecated_member_use
               color: color.withOpacity(0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
@@ -237,6 +239,7 @@ class _HorizontalCardCarouselState extends State<HorizontalCardCarousel> {
                 child: Icon(
                   data['icon'],
                   size: 100,
+                  // ignore: deprecated_member_use
                   color: Colors.white.withOpacity(0.08),
                 ),
               ),
@@ -253,6 +256,7 @@ class _HorizontalCardCarouselState extends State<HorizontalCardCarousel> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
+                            // ignore: deprecated_member_use
                             color: Colors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -268,6 +272,7 @@ class _HorizontalCardCarouselState extends State<HorizontalCardCarousel> {
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
+                            // ignore: deprecated_member_use
                             color: Colors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),

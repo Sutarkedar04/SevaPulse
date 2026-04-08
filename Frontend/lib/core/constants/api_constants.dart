@@ -1,7 +1,7 @@
 // lib/core/constants/api_constants.dart
 class ApiConstants {
   // Use the IP from your backend output
-  static const String baseUrl = 'http://10.166.178.191:5000/api';
+  static const String baseUrl = 'http://192.168.35.49:5000/api';
   
   // Auth endpoints
   static const String register = '$baseUrl/auth/register';

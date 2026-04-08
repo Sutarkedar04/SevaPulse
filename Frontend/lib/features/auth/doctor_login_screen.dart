@@ -22,8 +22,8 @@ class _DoctorLoginScreenState extends State<DoctorLoginScreen> {
   @override
   void initState() {
     super.initState();
-    _emailController.text = 'doctor@test.com';
-    _passwordController.text = 'password';
+    _emailController.text = 'pratik12@gmail.com';
+    _passwordController.text = '123456';
     _rememberMe = true;
   }
 

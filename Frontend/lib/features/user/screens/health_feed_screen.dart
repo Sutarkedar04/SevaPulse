@@ -1,3 +1,4 @@
+// lib/features/user/screens/health_feed_screen.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -53,7 +54,6 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
       ).timeout(const Duration(seconds: 30));
 
       print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -118,14 +118,11 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
       ).timeout(const Duration(seconds: 30));
 
       print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success']) {
-          // Refresh camps to update registered count
           await _fetchHealthCamps();
-          
           _showRegistrationSuccess(camp);
         } else {
           throw Exception(data['message'] ?? 'Registration failed');
@@ -239,10 +236,7 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
                     )
                   : Column(
                       children: [
-                        // Header Stats
                         _buildHeaderStats(),
-                        
-                        // Camps List
                         Expanded(
                           child: ListView.builder(
                             padding: const EdgeInsets.all(16),
@@ -353,7 +347,6 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Camp Image
           Stack(
             children: [
               Container(
@@ -396,7 +389,6 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
                         ),
                       ),
               ),
-              // Free/Paid Badge
               Positioned(
                 top: 12,
                 left: 12,
@@ -416,7 +408,6 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
                   ),
                 ),
               ),
-              // Days Left Badge
               Positioned(
                 top: 12,
                 right: 12,
@@ -444,7 +435,6 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title and Organization
                 Text(
                   camp.title,
                   style: const TextStyle(
@@ -463,7 +453,6 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
                 ),
                 const SizedBox(height: 12),
                 
-                // Date, Time, Location
                 _buildCampDetail(Icons.calendar_today, 
                   DateFormat('MMM dd, yyyy').format(camp.date)),
                 const SizedBox(height: 8),
@@ -472,7 +461,6 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
                 _buildCampDetail(Icons.location_on, camp.location),
                 const SizedBox(height: 12),
                 
-                // Description
                 Text(
                   camp.description,
                   style: const TextStyle(
@@ -485,7 +473,6 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
                 ),
                 const SizedBox(height: 12),
                 
-                // Services
                 Wrap(
                   spacing: 8,
                   runSpacing: 4,
@@ -509,7 +496,6 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
                 ),
                 const SizedBox(height: 12),
                 
-                // Registration Progress
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -546,7 +532,6 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
                 ),
                 const SizedBox(height: 16),
                 
-                // Action Buttons
                 Row(
                   children: [
                     Expanded(
@@ -627,7 +612,6 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
       ),
       child: Column(
         children: [
-          // Draggable handle
           Container(
             margin: const EdgeInsets.only(top: 12, bottom: 8),
             width: 40,
@@ -644,7 +628,6 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Camp Image
                   Container(
                     height: 200,
                     width: double.infinity,
@@ -681,7 +664,6 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
                   ),
                   const SizedBox(height: 20),
                   
-                  // Title and Organization
                   Text(
                     camp.title,
                     style: const TextStyle(
@@ -701,7 +683,6 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
                   ),
                   const SizedBox(height: 20),
                   
-                  // Camp Details Grid
                   GridView.count(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -720,7 +701,6 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
                   ),
                   const SizedBox(height: 20),
                   
-                  // Description
                   const Text(
                     'About this Camp',
                     style: TextStyle(
@@ -740,7 +720,6 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
                   ),
                   const SizedBox(height: 20),
                   
-                  // Services Offered
                   const Text(
                     'Services Offered',
                     style: TextStyle(
@@ -773,7 +752,6 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
                   ),
                   const SizedBox(height: 20),
                   
-                  // Contact Information
                   const Text(
                     'Contact Information',
                     style: TextStyle(
@@ -786,7 +764,6 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
                   _buildContactInfo(camp.contact),
                   const SizedBox(height: 30),
                   
-                  // Register Button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart'; // Add this package to pubspec.yaml
-
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
 import 'user_selection_screen.dart';
+import '../../data/providers/auth_provider.dart';
+import '../user/screens/user_home_screen.dart';
+import '../doctor/screens/doctor_home_screen.dart';
 
 class SevaPulseSplashScreen extends StatefulWidget {
   const SevaPulseSplashScreen({Key? key}) : super(key: key);
@@ -18,6 +21,7 @@ class _SevaPulseSplashScreenState extends State<SevaPulseSplashScreen>
   late Animation<double> _slideAnimation;
   late Animation<double> _scaleAnimation;
   int _currentPage = 0;
+  bool _isCheckingAuth = true;
   
   final List<Map<String, dynamic>> _splashScreens = [
     {
@@ -26,7 +30,7 @@ class _SevaPulseSplashScreenState extends State<SevaPulseSplashScreen>
       'description': 'Find clinics and hospitals in your city with available transportation options',
       'color': const Color(0xFF3498db),
       'buttonText': 'Next',
-      'imageType': 'logo', // Flag to determine which image to show
+      'imageType': 'logo',
     },
     {
       'title': 'SEVA PULSE',
@@ -34,7 +38,7 @@ class _SevaPulseSplashScreenState extends State<SevaPulseSplashScreen>
       'description': 'Skip the waiting line by registering for online queue at clinics and hospitals',
       'color': const Color(0xFF2ecc71),
       'buttonText': 'Next',
-      'imageType': 'svg', // Use SVG for queue management
+      'imageType': 'svg',
       'svgPath': 'assets/images/undraw_login_weas.svg',
     },
     {
@@ -43,7 +47,7 @@ class _SevaPulseSplashScreenState extends State<SevaPulseSplashScreen>
       'description': 'Get health tips and knowledge to stay fit and maintain a healthy lifestyle',
       'color': const Color(0xFFe74c3c),
       'buttonText': 'Get Started',
-      'imageType': 'svg', // Back to logo for last page
+      'imageType': 'svg',
       'svgPath': 'assets/images/undraw_doctor_aum1.svg'
     },
   ];
@@ -84,6 +88,51 @@ class _SevaPulseSplashScreenState extends State<SevaPulseSplashScreen>
     ));
     
     _animationController.forward();
+    
+    // ✅ CHECK IF USER IS ALREADY LOGGED IN
+    _checkAuthAndNavigate();
+  }
+  
+  // ✅ Add this method to check authentication
+  Future<void> _checkAuthAndNavigate() async {
+    // Wait a moment for animations to look nice
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    if (!mounted) return;
+    
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    print('🔐 SplashScreen - Checking auth, isInitializing: ${authProvider.isInitializing}');
+    print('🔐 SplashScreen - isAuthenticated: ${authProvider.isAuthenticated}');
+    
+    // Wait for auth provider to finish initializing
+    if (authProvider.isInitializing) {
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
+      _checkAuthAndNavigate();
+      return;
+    }
+    
+    setState(() {
+      _isCheckingAuth = false;
+    });
+    
+    // If already authenticated, navigate directly to home
+    if (authProvider.isAuthenticated) {
+      print('✅ User already logged in: ${authProvider.user?.name}');
+      
+      if (authProvider.isDoctor) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DoctorHomeScreen()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const UserHomeScreen()),
+        );
+      }
+    }
   }
 
   @override
@@ -102,6 +151,25 @@ class _SevaPulseSplashScreenState extends State<SevaPulseSplashScreen>
   }
 
   void _navigateToNext() {
+    // ✅ Check auth again before navigating
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    if (authProvider.isAuthenticated) {
+      // Already logged in, go to home
+      if (authProvider.isDoctor) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DoctorHomeScreen()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const UserHomeScreen()),
+        );
+      }
+      return;
+    }
+    
     if (_currentPage < _splashScreens.length - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 500),
@@ -161,12 +229,10 @@ class _SevaPulseSplashScreenState extends State<SevaPulseSplashScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Image container (either logo or SVG)
           _buildImageContainer(screenData),
           
           const SizedBox(height: 40),
           
-          // Title with fade animation
           FadeTransition(
             opacity: _fadeAnimation,
             child: Text(
@@ -182,7 +248,6 @@ class _SevaPulseSplashScreenState extends State<SevaPulseSplashScreen>
           
           const SizedBox(height: 16),
           
-          // Subtitle with slide animation
           AnimatedBuilder(
             animation: _animationController,
             builder: (context, child) {
@@ -203,7 +268,6 @@ class _SevaPulseSplashScreenState extends State<SevaPulseSplashScreen>
           
           const SizedBox(height: 30),
           
-          // Divider with accent color
           Container(
             width: 80,
             height: 4,
@@ -215,7 +279,6 @@ class _SevaPulseSplashScreenState extends State<SevaPulseSplashScreen>
           
           const SizedBox(height: 30),
           
-          // Description with fade animation
           FadeTransition(
             opacity: _fadeAnimation,
             child: Text(
@@ -235,12 +298,55 @@ class _SevaPulseSplashScreenState extends State<SevaPulseSplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Show loading while checking auth
+    if (_isCheckingAuth) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF3498db), Color(0xFF2c3e50)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(
+                  Icons.health_and_safety,
+                  color: Colors.white,
+                  size: 40,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'SEVA PULSE',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2c3e50),
+                ),
+              ),
+              const SizedBox(height: 10),
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3498db)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-            // Skip button (only show on first two pages)
             if (_currentPage < _splashScreens.length - 1)
               Align(
                 alignment: Alignment.topRight,
@@ -265,7 +371,6 @@ class _SevaPulseSplashScreenState extends State<SevaPulseSplashScreen>
                 ),
               ),
             
-            // PageView for splash screens
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
@@ -277,7 +382,6 @@ class _SevaPulseSplashScreenState extends State<SevaPulseSplashScreen>
               ),
             ),
             
-            // Page indicators
             Container(
               padding: const EdgeInsets.symmetric(vertical: 20),
               child: Row(
@@ -300,7 +404,6 @@ class _SevaPulseSplashScreenState extends State<SevaPulseSplashScreen>
               ),
             ),
             
-            // Next/Get Started button
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: AnimatedBuilder(

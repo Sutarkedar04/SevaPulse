@@ -107,13 +107,17 @@ class _EventsScreenState extends State<EventsScreen> {
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success']) {
-          await _fetchEvents(); // Refresh the list
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Event created successfully!'),
-              backgroundColor: Color(0xFF27ae60),
-            ),
-          );
+          await _fetchEvents();
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Event created successfully!'),
+                backgroundColor: Color(0xFF27ae60),
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
         } else {
           throw Exception(data['message'] ?? 'Failed to create event');
         }
@@ -123,12 +127,14 @@ class _EventsScreenState extends State<EventsScreen> {
       }
     } catch (e) {
       print('Error creating event: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString().replaceFirst('Exception: ', '')}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString().replaceFirst('Exception: ', '')}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -155,13 +161,15 @@ class _EventsScreenState extends State<EventsScreen> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success']) {
-          await _fetchEvents(); // Refresh the list
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Event updated successfully!'),
-              backgroundColor: Color(0xFF27ae60),
-            ),
-          );
+          await _fetchEvents();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Event updated successfully!'),
+                backgroundColor: Color(0xFF27ae60),
+              ),
+            );
+          }
         } else {
           throw Exception(data['message'] ?? 'Failed to update event');
         }
@@ -171,12 +179,14 @@ class _EventsScreenState extends State<EventsScreen> {
       }
     } catch (e) {
       print('Error updating event: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString().replaceFirst('Exception: ', '')}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString().replaceFirst('Exception: ', '')}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -202,13 +212,15 @@ class _EventsScreenState extends State<EventsScreen> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success']) {
-          await _fetchEvents(); // Refresh the list
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Event deleted successfully'),
-              backgroundColor: Color(0xFF27ae60),
-            ),
-          );
+          await _fetchEvents();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Event deleted successfully'),
+                backgroundColor: Color(0xFF27ae60),
+              ),
+            );
+          }
         } else {
           throw Exception(data['message'] ?? 'Failed to delete event');
         }
@@ -218,13 +230,24 @@ class _EventsScreenState extends State<EventsScreen> {
       }
     } catch (e) {
       print('Error deleting event: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString().replaceFirst('Exception: ', '')}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString().replaceFirst('Exception: ', '')}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
+  }
+
+  void _sendReminder(Map<String, dynamic> event) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Reminders sent to ${event['registeredParticipants'] ?? 0} registered patients'),
+        backgroundColor: const Color(0xFF27ae60),
+      ),
+    );
   }
 
   List<Map<String, dynamic>> get _filteredEvents {
@@ -309,15 +332,6 @@ class _EventsScreenState extends State<EventsScreen> {
     );
   }
 
-  void _sendReminder(Map<String, dynamic> event) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Reminders sent to ${event['registeredParticipants']} registered patients'),
-        backgroundColor: const Color(0xFF27ae60),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -348,7 +362,6 @@ class _EventsScreenState extends State<EventsScreen> {
                 )
               : Column(
                   children: [
-                    // Header
                     Container(
                       padding: const EdgeInsets.all(16),
                       color: Colors.white,
@@ -369,7 +382,6 @@ class _EventsScreenState extends State<EventsScreen> {
                           ),
                           const SizedBox(height: 16),
                           
-                          // Search Bar
                           TextField(
                             decoration: InputDecoration(
                               hintText: 'Search events...',
@@ -389,7 +401,6 @@ class _EventsScreenState extends State<EventsScreen> {
                           ),
                           const SizedBox(height: 12),
                           
-                          // Filter Chips
                           Row(
                             children: [
                               FilterChip(
@@ -433,7 +444,6 @@ class _EventsScreenState extends State<EventsScreen> {
                       ),
                     ),
 
-                    // Stats Cards
                     Container(
                       padding: const EdgeInsets.all(16),
                       color: const Color(0xFFf8f9fa),
@@ -455,7 +465,6 @@ class _EventsScreenState extends State<EventsScreen> {
                       ),
                     ),
 
-                    // Events List
                     Expanded(
                       child: _filteredEvents.isEmpty
                           ? _buildEmptyState()
@@ -523,7 +532,6 @@ class _EventsScreenState extends State<EventsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header with title and status
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -609,7 +617,6 @@ class _EventsScreenState extends State<EventsScreen> {
             ),
             const SizedBox(height: 12),
             
-            // Event Details
             _buildEventDetail(Icons.calendar_today, 
                 eventDate != null ? DateFormat('EEEE, MMMM d, yyyy').format(eventDate) : 'No date', 
                 event['time'] ?? 'No time specified'),
@@ -625,7 +632,6 @@ class _EventsScreenState extends State<EventsScreen> {
                 ],
               ),
             
-            // Action Buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -904,7 +910,6 @@ class _EventDialogState extends State<EventDialog> {
                 },
               ),
               const SizedBox(height: 16),
-              // Date and Time Selection
               Row(
                 children: [
                   Expanded(

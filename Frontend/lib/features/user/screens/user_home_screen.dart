@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:seva_pulse/data/providers/medicine_provider.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/appointment_provider.dart';
-import '../../../shared/widgets/bottom_nav_bar.dart';
+import '../../../presentation/common/widgets/bottom_nav_bar.dart';
 import '../widgets/home_content.dart';
 import 'my_medicine_screen.dart';
 import 'prescriptions_screen.dart';

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../../data/models/appointment_model.dart';
-import '../../data/providers/appointment_provider.dart';
+import '../../../data/models/appointment_model.dart';
+import '../../../data/providers/appointment_provider.dart';
 import 'appointment_item.dart';
 
 class UpcomingVisitsCard extends StatelessWidget {

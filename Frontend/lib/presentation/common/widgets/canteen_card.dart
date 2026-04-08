@@ -224,6 +224,7 @@ class _CanteenCardState extends State<CanteenCard> with SingleTickerProviderStat
                   ? Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
+                        // ignore: deprecated_member_use
                         color: Colors.orange.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -328,7 +329,9 @@ class _CanteenCardState extends State<CanteenCard> with SingleTickerProviderStat
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
+                            // ignore: deprecated_member_use
                             const Color(0xFFe67e22).withOpacity(0.1),
+                            // ignore: deprecated_member_use
                             const Color(0xFFf39c12).withOpacity(0.05),
                           ],
                         ),
@@ -344,6 +347,7 @@ class _CanteenCardState extends State<CanteenCard> with SingleTickerProviderStat
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
+                                  // ignore: deprecated_member_use
                                   color: const Color(0xFFe67e22).withOpacity(0.3),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
@@ -461,6 +465,7 @@ class _CanteenCardState extends State<CanteenCard> with SingleTickerProviderStat
                                 end: Alignment.bottomCenter,
                                 colors: [
                                   Colors.transparent,
+                                  // ignore: deprecated_member_use
                                   Colors.black.withOpacity(0.5),
                                 ],
                               ),
@@ -476,6 +481,7 @@ class _CanteenCardState extends State<CanteenCard> with SingleTickerProviderStat
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
+                              // ignore: deprecated_member_use
                               color: Colors.black.withOpacity(0.7),
                               borderRadius: BorderRadius.circular(20),
                             ),
@@ -658,6 +664,7 @@ class _CanteenCardState extends State<CanteenCard> with SingleTickerProviderStat
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
+        // ignore: deprecated_member_use
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
       ),

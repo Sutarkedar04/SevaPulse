@@ -1,6 +1,7 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'core/constants/api_constants.dart';
 import 'data/providers/auth_provider.dart';
 import 'data/providers/appointment_provider.dart';
@@ -24,22 +25,40 @@ void main() async {
   
   print('🚀 Starting Seva Pulse App...');
   print('📡 Using backend URL: ${ApiConstants.baseUrl}');
-  print('✅ Ready to start');
   
-  runApp(const MyApp());
+  // ✅ CRITICAL: Initialize SharedPreferences BEFORE runApp
+  final prefs = await SharedPreferences.getInstance();
+  print('✅ SharedPreferences initialized');
+  
+  // Check if there's an existing token
+  final existingToken = prefs.getString('auth_token');
+  print('🔐 Existing token: ${existingToken != null ? "YES (${existingToken.substring(0, existingToken.length > 20 ? 20 : existingToken.length)}...)" : "NO"}');
+  
+  runApp(MyApp(prefs: prefs));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  final SharedPreferences prefs;
+  
+  const MyApp({Key? key, required this.prefs}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider<AuthProvider>(create: (context) => AuthProvider()),
-        ChangeNotifierProvider<AppointmentProvider>(create: (context) => AppointmentProvider()),
-        ChangeNotifierProvider<MedicineProvider>(create: (context) => MedicineProvider()),
-        ChangeNotifierProvider<ThemeProvider>(create: (context) => ThemeProvider()),
+        // ✅ Pass SharedPreferences to AuthProvider
+        ChangeNotifierProvider<AuthProvider>(
+          create: (context) => AuthProvider.withPreferences(prefs),
+        ),
+        ChangeNotifierProvider<AppointmentProvider>(
+          create: (context) => AppointmentProvider(),
+        ),
+        ChangeNotifierProvider<MedicineProvider>(
+          create: (context) => MedicineProvider(),
+        ),
+        ChangeNotifierProvider<ThemeProvider>(
+          create: (context) => ThemeProvider(),
+        ),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
@@ -61,6 +80,7 @@ class MyApp extends StatelessWidget {
               '/canteen-menu': (context) => const CanteenMenuScreen(),
               '/chatbot': (context) => const ChatbotScreen(),
               '/contact-us': (context) => const ContactUsScreen(),
+              
             },
           );
         },
@@ -81,6 +101,12 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Print auth state on init
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      print('🔐 AuthWrapper init - isAuthenticated: ${authProvider.isAuthenticated}');
+      print('🔐 AuthWrapper init - user: ${authProvider.user?.name}');
+    });
   }
 
   @override
@@ -93,7 +119,9 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     
+    // Show loading while initializing
     if (authProvider.isInitializing) {
+      print('⏳ AuthProvider initializing...');
       return Scaffold(
         backgroundColor: const Color(0xFF3498db),
         body: Center(
@@ -114,7 +142,7 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
               ),
               const SizedBox(height: 10),
               Text(
-                'Connecting to server...',
+                'Checking saved session...',
                 style: TextStyle(
                   color: Colors.white70,
                   fontSize: 14,
@@ -134,13 +162,16 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
       );
     }
     
+    // Show home if authenticated, otherwise show splash/login
     if (authProvider.isAuthenticated) {
+      print('✅ User is authenticated: ${authProvider.user?.name} (${authProvider.user?.userType})');
       if (authProvider.isDoctor) {
         return const DoctorHomeScreen();
       } else {
         return const UserHomeScreen();
       }
     } else {
+      print('❌ No authenticated user, showing splash screen');
       return const SevaPulseSplashScreen();
     }
   }
