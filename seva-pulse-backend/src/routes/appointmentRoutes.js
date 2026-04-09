@@ -4,6 +4,112 @@ const { protect } = require('../middleware/auth');
 const Appointment = require('../models/Appointment');
 const Doctor = require('../models/Doctor');
 const Patient = require('../models/Patient');
+const User = require('../models/User');
+const Notification = require('../models/Notification'); // ✅ ADD THIS
+
+// Helper function to send appointment notification
+async function sendAppointmentNotification(appointment, action, io) {
+  try {
+    console.log(`📢 Sending ${action} notification for appointment: ${appointment._id}`);
+    
+    const patient = await Patient.findById(appointment.patient).populate('user', 'name');
+    const doctor = await Doctor.findById(appointment.doctor).populate('user', 'name');
+    
+    const patientUserId = patient?.user?._id;
+    const doctorUserId = doctor?.user?._id;
+    
+    if (!patientUserId) {
+      console.log('⚠️ No patient user ID found');
+      return null;
+    }
+
+    // Determine recipients based on action
+    let recipients = [];
+    let title = '';
+    let message = '';
+    
+    const appointmentDate = new Date(appointment.date).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    if (action === 'BOOKED') {
+      // Send to patient only
+      recipients = [patientUserId];
+      title = '✅ Appointment Booked Successfully';
+      message = `Your appointment with Dr. ${doctor?.user?.name || 'Doctor'} has been booked for ${appointmentDate} at ${appointment.timeSlot?.start || 'scheduled time'}. Please arrive 10 minutes before your appointment.`;
+    } else if (action === 'CONFIRMED') {
+      // Send to both patient and doctor
+      recipients = [patientUserId];
+      if (doctorUserId) recipients.push(doctorUserId);
+      title = '✅ Appointment Confirmed';
+      message = `Appointment with Dr. ${doctor?.user?.name || 'Doctor'} on ${appointmentDate} at ${appointment.timeSlot?.start || 'scheduled time'} has been confirmed.`;
+    } else if (action === 'CANCELLED') {
+      // Send to both patient and doctor
+      recipients = [patientUserId];
+      if (doctorUserId) recipients.push(doctorUserId);
+      title = '❌ Appointment Cancelled';
+      message = `Appointment with Dr. ${doctor?.user?.name || 'Doctor'} on ${appointmentDate} at ${appointment.timeSlot?.start || 'scheduled time'} has been cancelled.`;
+    }
+
+    if (recipients.length === 0) return null;
+
+    const notificationData = {
+      title,
+      message,
+      type: `APPOINTMENT_${action}`,
+      appointmentId: appointment._id,
+      appointmentData: {
+        doctorName: doctor?.user?.name || 'Doctor',
+        patientName: patient?.user?.name || 'Patient',
+        date: appointment.date,
+        time: appointment.timeSlot?.start || '10:00 AM',
+        status: appointment.status,
+        type: appointment.type
+      },
+      recipients,
+      createdAt: new Date()
+    };
+
+    const notification = await Notification.create(notificationData);
+    console.log(`✅ Notification saved: ${notification._id}`);
+
+    // Emit via WebSocket
+    if (io) {
+      recipients.forEach(recipientId => {
+        io.to(`patient_${recipientId}`).emit('notification', {
+          id: notification._id,
+          title: notification.title,
+          message: notification.message,
+          type: notification.type,
+          appointmentId: appointment._id,
+          appointmentData: notification.appointmentData,
+          createdAt: notification.createdAt
+        });
+        
+        if (doctorUserId) {
+          io.to(`doctor_${doctorUserId}`).emit('notification', {
+            id: notification._id,
+            title: notification.title,
+            message: notification.message,
+            type: notification.type,
+            appointmentId: appointment._id,
+            appointmentData: notification.appointmentData,
+            createdAt: notification.createdAt
+          });
+        }
+      });
+      console.log(`📡 WebSocket notification emitted`);
+    }
+
+    return notification;
+  } catch (error) {
+    console.error('❌ Error sending appointment notification:', error);
+    return null;
+  }
+}
 
 // Get all appointments
 router.get('/', protect, async (req, res, next) => {
@@ -67,7 +173,7 @@ router.get('/', protect, async (req, res, next) => {
     });
   } catch (error) {
     console.error('❌ Error in getAppointments:', error);
-    next(error); // Pass error to error handler
+    next(error);
   }
 });
 
@@ -103,6 +209,9 @@ router.post('/', protect, async (req, res, next) => {
     };
     
     const appointment = await Appointment.create(appointmentData);
+    
+    // ✅ SEND NOTIFICATION FOR NEW APPOINTMENT
+    await sendAppointmentNotification(appointment, 'BOOKED', global.io);
     
     const populatedAppointment = await Appointment.findById(appointment._id)
       .populate({
@@ -140,6 +249,8 @@ router.post('/', protect, async (req, res, next) => {
 router.put('/:id', protect, async (req, res, next) => {
   try {
     const { status } = req.body;
+    const oldAppointment = await Appointment.findById(req.params.id);
+    
     const appointment = await Appointment.findByIdAndUpdate(
       req.params.id,
       { status },
@@ -156,6 +267,16 @@ router.put('/:id', protect, async (req, res, next) => {
     
     if (!appointment) {
       return res.status(404).json({ success: false, message: 'Appointment not found' });
+    }
+    
+    // ✅ SEND NOTIFICATION WHEN STATUS CHANGES TO CONFIRMED
+    if (oldAppointment.status !== 'confirmed' && status === 'confirmed') {
+      await sendAppointmentNotification(appointment, 'CONFIRMED', global.io);
+    }
+    
+    // ✅ SEND NOTIFICATION WHEN STATUS CHANGES TO CANCELLED
+    if (oldAppointment.status !== 'cancelled' && status === 'cancelled') {
+      await sendAppointmentNotification(appointment, 'CANCELLED', global.io);
     }
     
     res.status(200).json({ 
@@ -183,10 +304,25 @@ router.put('/:id', protect, async (req, res, next) => {
 // Delete appointment
 router.delete('/:id', protect, async (req, res, next) => {
   try {
-    const appointment = await Appointment.findByIdAndDelete(req.params.id);
+    const appointment = await Appointment.findById(req.params.id)
+      .populate({
+        path: 'doctor',
+        populate: { path: 'user', select: 'name email' }
+      })
+      .populate({
+        path: 'patient',
+        populate: { path: 'user', select: 'name email' }
+      });
+    
     if (!appointment) {
       return res.status(404).json({ success: false, message: 'Appointment not found' });
     }
+    
+    // ✅ SEND NOTIFICATION FOR CANCELLATION
+    await sendAppointmentNotification(appointment, 'CANCELLED', global.io);
+    
+    await Appointment.findByIdAndDelete(req.params.id);
+    
     res.status(200).json({ success: true, message: 'Appointment deleted' });
   } catch (error) {
     console.error('❌ Error in deleteAppointment:', error);

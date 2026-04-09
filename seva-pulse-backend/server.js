@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const http = require('http'); // ✅ ADD THIS
+const socketIO = require('socket.io'); // ✅ ADD THIS
 
 // Load environment variables
 dotenv.config();
@@ -16,6 +18,11 @@ const billRoutes = require('./src/routes/billRoutes');
 const medicineRoutes = require('./src/routes/medicineRoutes');
 const healthFeedRoutes = require('./src/routes/healthFeedRoutes');
 const canteenRoutes = require('./src/routes/canteenRoutes');
+const notificationRoutes = require('./src/routes/notificationRoutes'); // ✅ ADD THIS
+
+// Import services - CREATE THESE FILES
+const WebSocketService = require('./src/services/webSocketService'); // ✅ CREATE THIS
+const { initNotificationService } = require('./src/controllers/healthFeedController'); // ✅ MODIFY THIS
 
 const app = express();
 
@@ -90,7 +97,8 @@ app.get('/api/health', (req, res) => {
     status: 'OK', 
     message: 'SevaPulse Backend is running',
     timestamp: new Date().toISOString(),
-    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    websocket: global.io ? 'enabled' : 'disabled'
   });
 });
 
@@ -109,6 +117,7 @@ app.use('/api/bills', billRoutes);
 app.use('/api/medicines', medicineRoutes);
 app.use('/api/health-feed', healthFeedRoutes);
 app.use('/api/canteen', canteenRoutes);
+app.use('/api/notifications', notificationRoutes); // ✅ ADD THIS
 console.log('✅ All API routes registered');
 
 // 404 handler
@@ -134,7 +143,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
+// Start server with WebSocket support
 const PORT = process.env.PORT || 5000;
 const HOST = '0.0.0.0';
 
@@ -152,8 +161,24 @@ function getLocalIp() {
   return 'localhost';
 }
 
-connectDB().then(() => {
-  app.listen(PORT, HOST, () => {
+connectDB().then(async () => {
+  // ✅ CREATE HTTP SERVER
+  const server = http.createServer(app);
+  
+  // ✅ INITIALIZE WEBSOCKET SERVICE
+  const webSocketService = new WebSocketService(server);
+  const io = webSocketService.getIO();
+  
+  // ✅ STORE IO IN GLOBAL FOR ACCESS IN CONTROLLERS
+  global.io = io;
+  
+  // ✅ INITIALIZE NOTIFICATION SERVICE WITH IO
+  initNotificationService(io);
+  
+  console.log('✅ WebSocket and Notification services initialized');
+  
+  // ✅ START SERVER
+  server.listen(PORT, HOST, () => {
     console.log(`
     ═══════════════════════════════════════════════════════
     🚀 SevaPulse Backend Server is running!
@@ -162,6 +187,7 @@ connectDB().then(() => {
     🌐 Network:      http://${getLocalIp()}:${PORT}
     📋 Health Check: http://localhost:${PORT}/api/health
     🧪 Test:         http://localhost:${PORT}/test
+    🔌 WebSocket:    ws://${getLocalIp()}:${PORT}
     ═══════════════════════════════════════════════════════
     `);
   });

@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../../core/constants/api_constants.dart';
 import '../../../data/providers/auth_provider.dart';
+import '../../../core/services/socket_service.dart'; // ✅ ADD THIS
 
 class HealthFeedScreen extends StatefulWidget {
   const HealthFeedScreen({Key? key}) : super(key: key);
@@ -18,11 +19,55 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
   List<HealthCamp> _upcomingCamps = [];
   bool _isLoading = true;
   String? _error;
+  final SocketService _socketService = SocketService(); // ✅ ADD THIS
 
   @override
   void initState() {
     super.initState();
     _fetchHealthCamps();
+    _setupRealtimeUpdates(); // ✅ ADD THIS
+  }
+
+  // ✅ ADD THIS METHOD - Listen for real-time camp updates
+  void _setupRealtimeUpdates() {
+    _socketService.notificationStream.listen((notification) {
+      print('📢 HealthFeedScreen received notification: $notification');
+      
+      // Check if notification is about health camps
+      if (notification['type']?.contains('HEALTH_CAMP') == true ||
+          notification['campId'] != null) {
+        // Refresh camps when notification received
+        _fetchHealthCamps();
+        
+        // Show snackbar about update
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    notification['title'] ?? 'Health Camp Update',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(notification['message'] ?? ''),
+                ],
+              ),
+              backgroundColor: notification['type']?.contains('DELETE') == true 
+                  ? Colors.red 
+                  : const Color(0xFF3498db),
+              duration: const Duration(seconds: 4),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+      }
+    });
   }
 
   Future<void> _fetchHealthCamps() async {
@@ -172,6 +217,12 @@ class _HealthFeedScreenState extends State<HealthFeedScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _socketService.dispose(); // ✅ ADD THIS
+    super.dispose();
   }
 
   @override

@@ -1,12 +1,13 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/constants/api_constants.dart';
+//import 'core/services/push_notification_service.dart'; // ✅ ADD THIS
 import 'data/providers/auth_provider.dart';
 import 'data/providers/appointment_provider.dart';
 import 'data/providers/theme_provider.dart';
 import 'data/providers/medicine_provider.dart';
+import 'data/providers/notification_provider.dart';
 import 'features/auth/SevaPulseSplashScreen.dart';
 import 'features/user/screens/user_home_screen.dart';
 import 'features/auth/user_login_screen.dart';
@@ -26,13 +27,15 @@ void main() async {
   print('🚀 Starting Seva Pulse App...');
   print('📡 Using backend URL: ${ApiConstants.baseUrl}');
   
-  // ✅ CRITICAL: Initialize SharedPreferences BEFORE runApp
+  // ✅ Initialize push notifications
+  //await PushNotificationService().initialize();
+  //print('✅ Push Notification Service initialized');
+  
   final prefs = await SharedPreferences.getInstance();
   print('✅ SharedPreferences initialized');
   
-  // Check if there's an existing token
   final existingToken = prefs.getString('auth_token');
-  print('🔐 Existing token: ${existingToken != null ? "YES (${existingToken.substring(0, existingToken.length > 20 ? 20 : existingToken.length)}...)" : "NO"}');
+  print('🔐 Existing token: ${existingToken != null ? "YES" : "NO"}');
   
   runApp(MyApp(prefs: prefs));
 }
@@ -46,7 +49,6 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // ✅ Pass SharedPreferences to AuthProvider
         ChangeNotifierProvider<AuthProvider>(
           create: (context) => AuthProvider.withPreferences(prefs),
         ),
@@ -58,6 +60,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<ThemeProvider>(
           create: (context) => ThemeProvider(),
+        ),
+        ChangeNotifierProvider<NotificationProvider>(
+          create: (context) => NotificationProvider(),
         ),
       ],
       child: Consumer<ThemeProvider>(
@@ -80,7 +85,6 @@ class MyApp extends StatelessWidget {
               '/canteen-menu': (context) => const CanteenMenuScreen(),
               '/chatbot': (context) => const ChatbotScreen(),
               '/contact-us': (context) => const ContactUsScreen(),
-              
             },
           );
         },
@@ -101,11 +105,21 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Print auth state on init
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+      
       print('🔐 AuthWrapper init - isAuthenticated: ${authProvider.isAuthenticated}');
       print('🔐 AuthWrapper init - user: ${authProvider.user?.name}');
+      
+      if (authProvider.isAuthenticated && authProvider.user != null) {
+        // Set token for API calls
+        if (authProvider.token != null) {
+          notificationProvider.setToken(authProvider.token!);
+          notificationProvider.fetchNotifications();
+        }
+      }
     });
   }
 
@@ -119,7 +133,6 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     
-    // Show loading while initializing
     if (authProvider.isInitializing) {
       print('⏳ AuthProvider initializing...');
       return Scaffold(
@@ -162,7 +175,6 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
       );
     }
     
-    // Show home if authenticated, otherwise show splash/login
     if (authProvider.isAuthenticated) {
       print('✅ User is authenticated: ${authProvider.user?.name} (${authProvider.user?.userType})');
       if (authProvider.isDoctor) {
